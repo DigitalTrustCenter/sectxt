@@ -24,6 +24,16 @@ True
 >>> s.warnings
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
+
+The "errors" and "warnings" attribute return a list of entries. An entry is
+a dict with three keys
+
+| key     | value                                                                                                      |
+|---------|------------------------------------------------------------------------------------------------------------|
+| code    | A fixed error code string                                                                                  |
+| message | A human readable error message in English                                                                  |
+| line    | The 1 based integer line number where the error occurred or None when the error applies to the entire file |
+
 ## Possible erors
 
 | code             | message                                                            |
