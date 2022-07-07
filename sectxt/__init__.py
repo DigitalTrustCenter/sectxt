@@ -1,18 +1,22 @@
 from collections import defaultdict
 from datetime import datetime, timezone
 import socket
-from typing import Optional
+from typing import Optional, Union, List
 from urllib.parse import urlsplit, urlunsplit
 
 import dateutil.parser
 import requests
 import urllib3.util.connection
 
+
+__version__ = "0.1"
+
 urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
 
 s = requests.Session()
 # print(s.def)
 class Parser:
+    PREFERRED_LANGUAGES = "preferred-languages"
 
     uri_fields = [
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
@@ -23,7 +27,9 @@ class Parser:
         self._line_info = []
         self._errors = []
         self._warnings = []
+        self._recommendations = []
         self._values = defaultdict(list)
+        self._langs = None
         lines = content.split("\n")
         for line_no, line in enumerate(lines):
             self.parse_line(line, line_no)
@@ -40,6 +46,12 @@ class Parser:
             line_no += 1
         err_dict = {"code": code, "message": message, "line": line_no}
         self._warnings.append(err_dict)
+
+    def _add_recommendation(self, code: str, message: str, line_no: Optional[int] = None):
+        if line_no is not None:
+            line_no += 1
+        err_dict = {"code": code, "message": message, "line": line_no}
+        self._recommendations.append(err_dict)
 
     def parse_line(self, line: str, line_no: int):
         line = line.rstrip()
@@ -106,6 +118,18 @@ class Parser:
         if "contact" not in self._values:
             self._add_error(
                 "no_contact", "Contact field must appear at least once")
+        else:
+            if (any(v.startswith("mailto:") for v in self._values['contact'])
+                    and "encryption" not in self._values):
+                self._add_recommendation(
+                    "no_encryption",
+                    "Add encryption key for email communication")
+        if self.PREFERRED_LANGUAGES in self._values:
+            if len(self._values[self.PREFERRED_LANGUAGES]) > 1:
+                self._add_error(
+                    "multi_lang", "Multiple Preferred-Languages lines is not allowed")
+            self._langs = [
+                v.strip() for v in self._values[self.PREFERRED_LANGUAGES][0].split(",")]
 
 
 class SecurityTXT:
@@ -123,9 +147,12 @@ class SecurityTXT:
         self._netloc = netloc
         self._errors = []
         self._warnings = []
+        self._recommendations = []
         self._path: Optional[str] = None
         self._url: Optional[str] = None
         self._lines = None
+        self._langs = None
+        self._contacts: Optional[List[str]] = None
         self.check()
 
     def check(self):
@@ -162,7 +189,10 @@ class SecurityTXT:
                 p = Parser(self._get_str(resp.content), url)
                 self._errors.extend(p._errors)
                 self._warnings.extend(p._warnings)
+                self._recommendations.extend(p._recommendations)
                 self._lines = p._line_info
+                self._langs = p._langs
+                self._contacts = p._values["contact"] or None
                 break
         else:
             self._add_error("no_security_txt", "Can not locate security.txt")
@@ -175,6 +205,10 @@ class SecurityTXT:
         return self._errors
 
     @property
+    def recommendations(self):
+        return self._recommendations
+
+    @property
     def warnings(self):
         return self._warnings
 
@@ -185,3 +219,15 @@ class SecurityTXT:
     @property
     def resolved_url(self) -> Optional[str]:
         return self._url
+
+    @property
+    def contacts(self):
+        return self._contacts
+
+    @property
+    def contacts(self):
+        return self._contacts
+
+    @property
+    def preferred_languages(self) -> Union[List[str], None]:
+        return self._langs

@@ -36,22 +36,23 @@ a dict with three keys
 
 ## Possible erors
 
-| code             | message                                                            |
-|------------------|--------------------------------------------------------------------|
-| "no_expire"      | "The Expires field is missing"                                     |
-| "multi_expire"   | "Expires field must appear only once"                              |
-| "invalid_expiry" | "Expiry date is invalid"                                           |
-| "no_canonical"   | "URL does not match with canonical URLs"                           |
-| "no_contact"     | "Contact field must appear at least once"                          |
-| "prec_ws"        | "There should be no whitespace before the field separator (colon)" |
-| "empty_key"      | "Key can not be empty"                                             | 
-| "no_space"       | "The field separator (colon) must be followed by a space"          |
-| "empty_value"    | "Value can not be empty"                                           |
-| "no_uri"         | "The field value must be an URI"                                   |
-| "no_https"       | "A web URI must be https"                                          |
-| "utf8"           | "Content is not utf-8 encoded"                                     |
-| "location"       | "Security.txt must be located at .well-known/security.txt"         |
-| "no_security_txt"| "Can not locate security.txt"                                      |
+| code              | message                                                            |
+|-------------------|--------------------------------------------------------------------|
+| "no_expire"       | "The Expires field is missing"                                     |
+| "multi_expire"    | "Expires field must appear only once"                              |
+| "invalid_expiry"  | "Expiry date is invalid"                                           |
+| "no_canonical"    | "URL does not match with canonical URLs"                           |
+| "no_contact"      | "Contact field must appear at least once"                          |
+| "prec_ws"         | "There should be no whitespace before the field separator (colon)" |
+| "empty_key"       | "Key can not be empty"                                             | 
+| "no_space"        | "The field separator (colon) must be followed by a space"          |
+| "empty_value"     | "Value can not be empty"                                           |
+| "no_uri"          | "The field value must be an URI"                                   |
+| "no_https"        | "A web URI must be https"                                          |
+| "utf8"            | "Content is not utf-8 encoded"                                     |
+| "location"        | "Security.txt must be located at .well-known/security.txt"         |
+| "no_security_txt" | "Can not locate security.txt"                                      |
+| "multi_lang"      | "Multiple Preferred-Languages lines is not allowed"                |
 
 ## Possible warnings
 
