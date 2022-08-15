@@ -67,7 +67,7 @@ class Parser:
             self._add_error("prec_ws", "There should be no whitespace before the field separator (colon)", line_no)
             key = key.rstrip()
         if not key:
-            self._add_error("empty_key", "Key can not be empty", line_no)
+            self._add_error("empty_key", "Field key can not be empty", line_no)
 
         if value:
             if value[0] != " ":
@@ -75,12 +75,12 @@ class Parser:
             value = value.lstrip()
 
         if not value:
-            self._add_error("empty_value", "Value can not be empty", line_no)
+            self._add_error("empty_value", "Field value can not be empty", line_no)
         else:
             if key in self.uri_fields:
                 url_parts = urlsplit(value)
                 if url_parts.scheme == "":
-                    self._add_error("no_uri", "The field value must be an URI", line_no)
+                    self._add_error("no_uri", "Field value must be an URI", line_no)
                 elif url_parts.scheme == "http":
                     self._add_error("no_https", "A web URI must be https", line_no)
             elif key == "expires":
@@ -93,7 +93,7 @@ class Parser:
         try:
             value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
-            self._add_error("invalid_expiry", "Expiry date is invalid")
+            self._add_error("invalid_expiry", "Date in Expires field is invalid")
         else:
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
@@ -107,7 +107,7 @@ class Parser:
 
     def validate_contents(self):
         if "expires" not in self._values:
-            self._add_error("no_expire", "The Expires field is missing")
+            self._add_error("no_expire", "Expires field is missing")
         elif len(self._values["expires"]) > 1:
             self._add_error(
                 "multi_expire", "Expires field must appear only once")
@@ -123,11 +123,11 @@ class Parser:
                     and "encryption" not in self._values):
                 self._add_recommendation(
                     "no_encryption",
-                    "Add encryption key for email communication")
+                    "Contact missing encryption key for email communication")
         if self.PREFERRED_LANGUAGES in self._values:
             if len(self._values[self.PREFERRED_LANGUAGES]) > 1:
                 self._add_error(
-                    "multi_lang", "Multiple Preferred-Languages lines is not allowed")
+                    "multi_lang", "Multiple Preferred-Languages lines are not allowed")
             self._langs = [
                 v.strip() for v in self._values[self.PREFERRED_LANGUAGES][0].split(",")]
 
