@@ -40,6 +40,7 @@ a dict with three keys
 |-------------------|--------------------------------------------------------------------|
 | "no_expire"       | "The Expires field is missing"                                     |
 | "multi_expire"    | "Expires field must appear only once"                              |
+| "expired"         | "Expiry date has passed"                                           |
 | "invalid_expiry"  | "Expiry date is invalid"                                           |
 | "no_canonical"    | "URL does not match with canonical URLs"                           |
 | "no_contact"      | "Contact field must appear at least once"                          |

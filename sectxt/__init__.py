@@ -1,22 +1,23 @@
 from collections import defaultdict
 from datetime import datetime, timezone
-import socket
+import re
 from typing import Optional, Union, List
 from urllib.parse import urlsplit, urlunsplit
 
 import dateutil.parser
 import requests
-import urllib3.util.connection
 
 
-__version__ = "0.1"
-
-urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
+__version__ = "0.2a"
 
 s = requests.Session()
-# print(s.def)
+
+
 class Parser:
     PREFERRED_LANGUAGES = "preferred-languages"
+    iso8601_re = re.compile(
+        r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[-+]\d{2}:\d{2})$",
+        re.IGNORECASE | re.ASCII)
 
     uri_fields = [
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
@@ -91,19 +92,29 @@ class Parser:
 
     def _parse_expires(self, value, line_no):
         try:
-            value = dateutil.parser.parse(value)
+            date_value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
             self._add_error("invalid_expiry", "Expiry date is invalid")
+            return value
         else:
+            if not self.iso8601_re.match(value):
+                # dateutil parses more than just iso8601 format
+                self._add_error("invalid_expiry", "Expiry date is invalid")
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
-            if value > max_value:
+            if date_value > max_value:
                 self._add_warning(
                     "long_expiry",
                     "Expiry date is more than one year in the future",
                     line_no,
                 )
-        return value
+            elif date_value < now:
+                self._add_error(
+                    "expired",
+                    "Expiry date has passed",
+                    line_no,
+                )
+        return date_value
 
     def validate_contents(self):
         if "expires" not in self._values:

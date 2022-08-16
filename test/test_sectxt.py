@@ -1,3 +1,4 @@
+from datetime import date
 from unittest import TestCase
 
 from sectxt import Parser
@@ -6,7 +7,7 @@ from sectxt import Parser
 class SecTxtTestCase(TestCase):
 
     def test_future_expires(self):
-        content = "Expires: 2030-01-01T12:00Z\n"
+        content = f"Expires: {date.today().year + 3}-01-01T12:00Z\n"
         p = Parser(content)
         self.assertEqual(p._warnings[0]["code"], "long_expiry")
 
@@ -14,6 +15,14 @@ class SecTxtTestCase(TestCase):
         content = "Expires: Nonsense\n"
         p = Parser(content)
         self.assertEqual(p._errors[0]["code"], "invalid_expiry")
+        content = "Expires: Thu, 15 Sep 2022 06:03:46 -0700\n"
+        p = Parser(content)
+        self.assertEqual(p._errors[0]["code"], "invalid_expiry")
+
+    def test_expired(self):
+        content = "Expires: 2020-01-01T12:00:00Z\n"
+        p = Parser(content)
+        self.assertEqual(p._errors[0]["code"], "expired")
 
     def test_long_expiry(self):
         content = "Expires: 2030-01-01T12:00Z\n# Wow"
