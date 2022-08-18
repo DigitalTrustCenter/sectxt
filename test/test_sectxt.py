@@ -9,7 +9,7 @@ class SecTxtTestCase(TestCase):
     def test_future_expires(self):
         content = f"Expires: {date.today().year + 3}-01-01T12:00Z\n"
         p = Parser(content)
-        self.assertEqual(p._warnings[0]["code"], "long_expiry")
+        self.assertEqual(p._recommendations[0]["code"], "long_expiry")
 
     def test_invalid_expires(self):
         content = "Expires: Nonsense\n"

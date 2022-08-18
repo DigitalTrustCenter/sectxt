@@ -27,7 +27,6 @@ class Parser:
         self._url = url
         self._line_info = []
         self._errors = []
-        self._warnings = []
         self._recommendations = []
         self._values = defaultdict(list)
         self._langs = None
@@ -41,12 +40,6 @@ class Parser:
             line_no += 1
         err_dict = {"code": code, "message": message, "line": line_no}
         self._errors.append(err_dict)
-
-    def _add_warning(self, code: str, message: str, line_no: Optional[int] = None):
-        if line_no is not None:
-            line_no += 1
-        err_dict = {"code": code, "message": message, "line": line_no}
-        self._warnings.append(err_dict)
 
     def _add_recommendation(self, code: str, message: str, line_no: Optional[int] = None):
         if line_no is not None:
@@ -103,7 +96,7 @@ class Parser:
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
             if date_value > max_value:
-                self._add_warning(
+                self._add_recommendation(
                     "long_expiry",
                     "Expiry date is more than one year in the future",
                     line_no,
@@ -157,7 +150,6 @@ class SecurityTXT:
             netloc = url
         self._netloc = netloc
         self._errors = []
-        self._warnings = []
         self._recommendations = []
         self._path: Optional[str] = None
         self._url: Optional[str] = None
@@ -199,7 +191,6 @@ class SecurityTXT:
                         "location", "Security.txt must be located at .well-known/security.txt")
                 p = Parser(self._get_str(resp.content), url)
                 self._errors.extend(p._errors)
-                self._warnings.extend(p._warnings)
                 self._recommendations.extend(p._recommendations)
                 self._lines = p._line_info
                 self._langs = p._langs
@@ -218,10 +209,6 @@ class SecurityTXT:
     @property
     def recommendations(self):
         return self._recommendations
-
-    @property
-    def warnings(self):
-        return self._warnings
 
     @property
     def lines(self):
