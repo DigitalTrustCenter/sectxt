@@ -25,7 +25,7 @@ True
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
 
-The "errors" and "warnings" attribute return a list of entries. An entry is
+The "errors" and "recommendations" attribute return a list of entries. An entry is
 a dict with three keys
 
 | key     | value                                                                                                      |
@@ -55,8 +55,9 @@ a dict with three keys
 | "no_security_txt" | "Can not locate security.txt"                                      |
 | "multi_lang"      | "Multiple Preferred-Languages lines is not allowed"                |
 
-## Possible warnings
+## Possible recommendations
 
-| code          | message                                            |
-|---------------|----------------------------------------------------|
-| "long_expiry" | "Expiry date is more than one year in the future", |
+| code            | message                                                                                          |
+|-----------------|--------------------------------------------------------------------------------------------------|
+| "long_expiry"   | "Expiry date is more than one year in the future"                                                |
+| "no_encryption" | "Add encryption key for email communication" (only when Contact field contains an email address) |
