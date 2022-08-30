@@ -1,7 +1,34 @@
-from datetime import date
+from datetime import date, timedelta
 from unittest import TestCase
 
 from sectxt import Parser
+
+
+_signed_example = f"""-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+# Canonical URI
+Canonical: https://example.com/.well-known/security.txt
+
+# Our security address
+Contact: mailto:security@example.com
+
+# Our OpenPGP key
+Encryption: https://example.com/pgp-key.txt
+
+# Our security policy
+Policy: https://example.com/security-policy.html
+
+# Our security acknowledgments page
+Acknowledgments: https://example.com/hall-of-fame.html
+
+Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.2
+
+[signature]
+-----END PGP SIGNATURE-----
+"""
 
 
 class SecTxtTestCase(TestCase):
@@ -65,3 +92,18 @@ class SecTxtTestCase(TestCase):
         content = "Contact: me@example.com\n# Wow"
         p = Parser(content)
         self.assertEqual(p._errors[0]["code"], "no_uri")
+
+    def test_signed(self):
+        p = Parser(_signed_example)
+        self.assertTrue(p.is_valid())
+
+    def test_signed_no_canonical(self):
+        content = _signed_example.replace(
+            "Canonical: https://example.com/.well-known/security.txt", "")
+        p = Parser(content)
+        self.assertEqual(p._recommendations[0]['code'], "no_canonical")
+
+    def test_signed_dash_escaped(self):
+        content = _signed_example.replace("Expires", "- Expires")
+        p = Parser(content)
+        self.assertTrue(p.is_valid())
