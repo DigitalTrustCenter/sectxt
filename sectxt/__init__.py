@@ -30,6 +30,9 @@ class Parser:
         self._recommendations = []
         self._values = defaultdict(list)
         self._langs = None
+        self._signed = False
+        self._reading_sig = False
+        self._finished_sig = False
         lines = content.split("\n")
         for line_no, line in enumerate(lines):
             self.parse_line(line, line_no)
@@ -49,10 +52,31 @@ class Parser:
 
     def parse_line(self, line: str, line_no: int):
         line = line.rstrip()
-        if line.startswith("#"):
+
+        if self._reading_sig:
+            if line == "-----END PGP SIGNATURE-----":
+                self._reading_sig = False
+                self._finished_sig = True
+            return
+
+        if line and self._finished_sig:
+            self._add_error("data_after_sig", "Data exists after signature")
+            return
+
+        # signed content might be dash escaped
+        if self._signed and not self._reading_sig and line.startswith("- "):
+            line = line[2:]
+
+        if line == "-----BEGIN PGP SIGNED MESSAGE-----" and line_no == 0:
+            self._signed = True
+        elif line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
+            self._reading_sig = True
+        elif line.startswith("#"):
             self._line_info.append({"type": "comment", "value": line})
         elif ":" in line:
             self.parse_field(line, line_no)
+        elif line:
+            self._add_error("invalid_line", "No key and value found", line_no)
 
     def parse_field(self, line: str, line_no: int):
         key, value = line.split(":", 1)
@@ -79,6 +103,8 @@ class Parser:
                     self._add_error("no_https", "A web URI must be https", line_no)
             elif key == "expires":
                 value = self._parse_expires(value, line_no)
+            elif key == "hash" and self._signed:
+                return
         self._values[key].append(value)
         self._line_info.append(
             {"type": "field", "field_name": key, "value": value})
@@ -118,7 +144,8 @@ class Parser:
         if self._url and "canonical" in self._values:
             if self._url not in self._values["canonical"]:
                 self._add_error(
-                    "no_canonical", "URL does not match with canonical URLs")
+                    "no_canonical_match",
+                    "URL does not match with canonical URLs")
         if "contact" not in self._values:
             self._add_error(
                 "no_contact", "Contact field must appear at least once")
@@ -134,6 +161,17 @@ class Parser:
                     "multi_lang", "Multiple Preferred-Languages lines are not allowed")
             self._langs = [
                 v.strip() for v in self._values[self.PREFERRED_LANGUAGES][0].split(",")]
+
+        if not self._signed:
+            self._add_recommendation(
+                "not_signed", "The contents should be digitally signed")
+        if self._signed and not self._values.get("canonical"):
+            self._add_recommendation(
+                "no_canonical",
+                "Canonical field should be present in a signed file")
+
+    def is_valid(self):
+        return not self._errors
 
 
 class SecurityTXT:
@@ -198,9 +236,6 @@ class SecurityTXT:
                 break
         else:
             self._add_error("no_security_txt", "Can not locate security.txt")
-
-    def is_valid(self):
-        return not self._errors
 
     @property
     def errors(self):
