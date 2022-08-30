@@ -34,30 +34,30 @@ a dict with three keys
 | message | A human readable error message in English                                                                  |
 | line    | The 1 based integer line number where the error occurred or None when the error applies to the entire file |
 
-## Possible erors
+## Possible errors
 
 | code              | message                                                            |
 |-------------------|--------------------------------------------------------------------|
-| "no_expire"       | "The Expires field is missing"                                     |
+| "no_expire"       | "Expires field is missing"                                         |
 | "multi_expire"    | "Expires field must appear only once"                              |
 | "expired"         | "Expiry date has passed"                                           |
-| "invalid_expiry"  | "Expiry date is invalid"                                           |
+| "invalid_expiry"  | "Date in Expires field is invalid"                                 |
 | "no_canonical"    | "URL does not match with canonical URLs"                           |
 | "no_contact"      | "Contact field must appear at least once"                          |
 | "prec_ws"         | "There should be no whitespace before the field separator (colon)" |
-| "empty_key"       | "Key can not be empty"                                             | 
+| "empty_key"       | "Field key can not be empty"                                       | 
 | "no_space"        | "The field separator (colon) must be followed by a space"          |
-| "empty_value"     | "Value can not be empty"                                           |
-| "no_uri"          | "The field value must be an URI"                                   |
+| "empty_value"     | "Field value can not be empty"                                     |
+| "no_uri"          | "Field value must be an URI"                                       |
 | "no_https"        | "A web URI must be https"                                          |
 | "utf8"            | "Content is not utf-8 encoded"                                     |
 | "location"        | "Security.txt must be located at .well-known/security.txt"         |
 | "no_security_txt" | "Can not locate security.txt"                                      |
-| "multi_lang"      | "Multiple Preferred-Languages lines is not allowed"                |
+| "multi_lang"      | "Multiple Preferred-Languages lines are not allowed"               |
 
 ## Possible recommendations
 
 | code            | message                                                                                          |
 |-----------------|--------------------------------------------------------------------------------------------------|
 | "long_expiry"   | "Expiry date is more than one year in the future"                                                |
-| "no_encryption" | "Add encryption key for email communication" (only when Contact field contains an email address) |
+| "no_encryption" | "Contact missing encryption key for email communication", |
