@@ -1,8 +1,15 @@
+from cgi import parse_header
 from collections import defaultdict
 from datetime import datetime, timezone
 import re
-from typing import Optional, Union, List
+from typing import Optional, Union, List, DefaultDict
+import sys
 from urllib.parse import urlsplit, urlunsplit
+
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 import dateutil.parser
 import requests
@@ -13,8 +20,29 @@ __version__ = "0.3"
 s = requests.Session()
 
 
+class ErrorDict(TypedDict):
+    code: str
+    message: str
+    line: Optional[int]
+
+
+class LineDict(TypedDict):
+    type: str
+    field_name: Optional[str]
+    value: str
+
+
+def strlist_from_arg(
+        arg: Union[str, List[str], None]) -> Union[List[str], None]:
+    if isinstance(arg, str):
+        return [arg]
+    return arg
+
+
+PREFERRED_LANGUAGES = "preferred-languages"
+
+
 class Parser:
-    PREFERRED_LANGUAGES = "preferred-languages"
     iso8601_re = re.compile(
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[-+]\d{2}:\d{2})$",
         re.IGNORECASE | re.ASCII)
@@ -23,99 +51,139 @@ class Parser:
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
         "policy"]
 
-    def __init__(self, content: str, url: Optional[str] = None):
-        self._url = url
-        self._line_info = []
-        self._errors = []
-        self._recommendations = []
-        self._values = defaultdict(list)
-        self._langs = None
+    def __init__(
+            self,
+            content: str,
+            urls: Optional[str] = None,
+    ):
+        self._urls = strlist_from_arg(urls)
+        self._line_info: List[LineDict] = []
+        self._errors: List[ErrorDict] = []
+        self._recommendations: List[ErrorDict] = []
+        self._values: DefaultDict[str, List[str]] = defaultdict(list)
+        self._langs: Optional[List[str]] = None
         self._signed = False
         self._reading_sig = False
         self._finished_sig = False
-        lines = content.split("\n")
-        for line_no, line in enumerate(lines):
-            self.parse_line(line, line_no)
+        self._content = content
+        self._line_no: Optional[int] = None
+        self._process()
+
+    def _process(self) -> None:
+        lines = self._content.split("\n")
+        self._line_no = 1
+        for line in lines:
+            self._line_info.append(self._parse_line(line))
+            self._line_no += 1
+        self._line_no = None
+        if self._line_info and self._line_info[-1]["type"] == "empty":
+            del self._line_info[-1]
         self.validate_contents()
 
-    def _add_error(self, code: str, message: str, line_no: Optional[int] = None):
-        if line_no is not None:
-            line_no += 1
-        err_dict = {"code": code, "message": message, "line": line_no}
+    def _add_error(
+            self,
+            code: str,
+            message: str,
+    ) -> None:
+        err_dict: ErrorDict = {
+            "code": code, "message": message, "line": self._line_no}
         self._errors.append(err_dict)
 
-    def _add_recommendation(self, code: str, message: str, line_no: Optional[int] = None):
-        if line_no is not None:
-            line_no += 1
-        err_dict = {"code": code, "message": message, "line": line_no}
+    def _add_recommendation(
+            self,
+            code: str,
+            message: str,
+    ) -> None:
+        err_dict: ErrorDict = {
+            "code": code, "message": message, "line": self._line_no}
         self._recommendations.append(err_dict)
 
-    def parse_line(self, line: str, line_no: int):
+    def _parse_line(self, line: str) -> LineDict:
         line = line.rstrip()
 
         if self._reading_sig:
             if line == "-----END PGP SIGNATURE-----":
                 self._reading_sig = False
                 self._finished_sig = True
-            return
+            return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line and self._finished_sig:
             self._add_error("data_after_sig", "Data exists after signature")
-            return
+            return {"type": "error", "field_name": None, "value": line}
 
         # signed content might be dash escaped
         if self._signed and not self._reading_sig and line.startswith("- "):
             line = line[2:]
 
-        if line == "-----BEGIN PGP SIGNED MESSAGE-----" and line_no == 0:
+        if line == "-----BEGIN PGP SIGNED MESSAGE-----" and self._line_no == 1:
             self._signed = True
-        elif line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
-            self._reading_sig = True
-        elif line.startswith("#"):
-            self._line_info.append({"type": "comment", "value": line})
-        elif ":" in line:
-            self.parse_field(line, line_no)
-        elif line:
-            self._add_error("invalid_line", "No key and value found", line_no)
+            return {"type": "pgp_envelope", "field_name": None, "value": line}
 
-    def parse_field(self, line: str, line_no: int):
+        if line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
+            self._reading_sig = True
+            return {"type": "pgp_envelope", "field_name": None, "value": line}
+
+        if line.startswith("#"):
+            return {"type": "comment", "value": line, "field_name": None}
+
+        if ":" in line:
+            return self._parse_field(line)
+
+        if line:
+            self._add_error("invalid_line", "No key and value found")
+            return {"type": "error", "value": line, "field_name": None}
+
+        return {"type": "empty", "value": "", "field_name": None}
+
+    def _parse_field(self, line: str) -> LineDict:
         key, value = line.split(":", 1)
         key = key.lower()
         if key.rstrip() != key:
-            self._add_error("prec_ws", "There should be no whitespace before the field separator (colon)", line_no)
+            self._add_error(
+                "prec_ws",
+                "There should be no whitespace before the field separator "
+                "(colon)")
             key = key.rstrip()
-        if not key:
-            self._add_error("empty_key", "Field key can not be empty", line_no)
 
         if value:
             if value[0] != " ":
-                self._add_error("no_space", "The field separator (colon) must be followed by a space", line_no)
+                self._add_error(
+                    "no_space",
+                    "The field separator (colon) must be followed by a space")
             value = value.lstrip()
 
-        if not value:
-            self._add_error("empty_value", "Field value can not be empty", line_no)
-        else:
-            if key in self.uri_fields:
-                url_parts = urlsplit(value)
-                if url_parts.scheme == "":
-                    self._add_error("no_uri", "Field value must be an URI", line_no)
-                elif url_parts.scheme == "http":
-                    self._add_error("no_https", "A web URI must be https", line_no)
-            elif key == "expires":
-                value = self._parse_expires(value, line_no)
-            elif key == "hash" and self._signed:
-                return
-        self._values[key].append(value)
-        self._line_info.append(
-            {"type": "field", "field_name": key, "value": value})
+        if key == "hash" and self._signed:
+            return {"type": "pgp_envelope", "field_name": None, "value": line}
 
-    def _parse_expires(self, value, line_no):
+        if not key:
+            self._add_error("empty_key", "Field key can not be empty")
+            return {"type": "error", "value": line, "field_name": None}
+
+        if not value:
+            self._add_error(
+                "empty_value", "Field value can not be empty")
+            return {"type": "error", "value": line, "field_name": None}
+
+        if key in self.uri_fields:
+            url_parts = urlsplit(value)
+            if url_parts.scheme == "":
+                self._add_error(
+                    "no_uri", "Field value must be an URI")
+            elif url_parts.scheme == "http":
+                self._add_error("no_https", "A web URI must be https")
+        elif key == "expires":
+            self._parse_expires(value)
+        self._values[key].append(value)
+        return {"type": "field", "field_name": key, "value": value}
+
+    def _parse_expires(self, value: str) -> None:
         try:
             date_value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
-            self._add_error("invalid_expiry", "Date in Expires field is invalid")
-            return value
+            self._add_error(
+                "invalid_expiry", "Date in Expires field is invalid")
         else:
+            self._expires_date = date_value
             if not self.iso8601_re.match(value):
                 # dateutil parses more than just iso8601 format
                 self._add_error("invalid_expiry", "Expiry date is invalid")
@@ -124,25 +192,18 @@ class Parser:
             if date_value > max_value:
                 self._add_recommendation(
                     "long_expiry",
-                    "Expiry date is more than one year in the future",
-                    line_no,
-                )
+                    "Expiry date is more than one year in the future")
             elif date_value < now:
-                self._add_error(
-                    "expired",
-                    "Expiry date has passed",
-                    line_no,
-                )
-        return date_value
+                self._add_error("expired", "Expiry date has passed")
 
-    def validate_contents(self):
+    def validate_contents(self) -> None:
         if "expires" not in self._values:
             self._add_error("no_expire", "Expires field is missing")
         elif len(self._values["expires"]) > 1:
             self._add_error(
                 "multi_expire", "Expires field must appear only once")
-        if self._url and "canonical" in self._values:
-            if self._url not in self._values["canonical"]:
+        if self._urls and "canonical" in self._values:
+            if all(url not in self._values["canonical"] for url in self._urls):
                 self._add_error(
                     "no_canonical_match",
                     "URL does not match with canonical URLs")
@@ -155,12 +216,14 @@ class Parser:
                 self._add_recommendation(
                     "no_encryption",
                     "Contact missing encryption key for email communication")
-        if self.PREFERRED_LANGUAGES in self._values:
-            if len(self._values[self.PREFERRED_LANGUAGES]) > 1:
+        if PREFERRED_LANGUAGES in self._values:
+            if len(self._values[PREFERRED_LANGUAGES]) > 1:
                 self._add_error(
-                    "multi_lang", "Multiple Preferred-Languages lines are not allowed")
+                    "multi_lang",
+                    "Multiple Preferred-Languages lines are not allowed")
             self._langs = [
-                v.strip() for v in self._values[self.PREFERRED_LANGUAGES][0].split(",")]
+                v.strip()
+                for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
 
         if not self._signed:
             self._add_recommendation(
@@ -170,13 +233,50 @@ class Parser:
                 "no_canonical",
                 "Canonical field should be present in a signed file")
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return not self._errors
 
+    @property
+    def errors(self) -> List[ErrorDict]:
+        return self._errors
 
-class SecurityTXT:
+    @property
+    def recommendations(self) -> List[ErrorDict]:
+        return self._recommendations
 
-    CORRECT_PATH = ".well-known/security.txt"
+    @property
+    def lines(self) -> List[LineDict]:
+        return self._line_info
+
+    @property
+    def preferred_languages(self) -> Union[List[str], None]:
+        if PREFERRED_LANGUAGES in self._values:
+            return [
+                v.strip() for v in
+                self._values[PREFERRED_LANGUAGES][0].split(",")]
+        return None
+
+    @property
+    def contact_email(self) -> Union[None, str]:
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if value.startswith("mailto:"):
+                    return value[7:]
+                if ":" not in value and "@" in value:
+                    return value
+        return None
+
+    @property
+    def resolved_url(self) -> Optional[str]:
+        if self._urls:
+            return self._urls[-1]
+        return None
+
+
+CORRECT_PATH = ".well-known/security.txt"
+
+
+class SecurityTXT(Parser):
 
     def __init__(self, url: str):
         url_parts = urlsplit(url)
@@ -187,80 +287,67 @@ class SecurityTXT:
         else:
             netloc = url
         self._netloc = netloc
-        self._errors = []
-        self._recommendations = []
         self._path: Optional[str] = None
         self._url: Optional[str] = None
-        self._lines = None
-        self._langs = None
-        self._contacts: Optional[List[str]] = None
-        self.check()
+        super().__init__('')
 
-    def check(self):
-        self.retrieve()
-
-    def _add_error(self, code: str, message: str, line_no: Optional[int] = None):
-        if line_no is not None:
-            line_no += 1
-        err_dict = {"code": code, "message": message, "line": line_no}
-        self._errors.append(err_dict)
-
-    def _get_str(self, content: bytes):
+    def _get_str(self, content: bytes) -> str:
         try:
             return content.decode()
         except UnicodeError:
-            self._add_error("utf8", "Content is not utf-8 encoded", None)
+            self._add_error("utf8", "Content is not utf-8 encoded")
         return content.decode(errors="replace")
 
-    def retrieve(self):
+    def _process(self) -> None:
         for path in [".well-known/security.txt", "security.txt"]:
-            url = urlunsplit(("https", self._netloc, path, "", ""))
+            url = urlunsplit(("https", self._netloc, path, None, None))
             try:
-                print("yes")
                 resp = requests.get(url, timeout=5)
-                print("yes")
-            except requests.ConnectionError:
+            except requests.exceptions.SSLError:
+                self._add_error("invalid_cert", "Invalid certificate")
+                try:
+                    resp = requests.get(url, timeout=5, verify=False)
+                except:
+                    continue
+            except:
                 continue
             if resp.status_code == 200:
                 self._path = path
                 self._url = url
-                if path != self.CORRECT_PATH:
+                if path != CORRECT_PATH:
                     self._add_error(
-                        "location", "Security.txt must be located at .well-known/security.txt")
-                p = Parser(self._get_str(resp.content), url)
-                self._errors.extend(p._errors)
-                self._recommendations.extend(p._recommendations)
-                self._lines = p._line_info
-                self._langs = p._langs
-                self._contacts = p._values["contact"] or None
+                        "location",
+                        "Security.txt must be located at "
+                        ".well-known/security.txt")
+                if 'content-type' not in resp.headers:
+                    self._add_error(
+                        "no_content_type",
+                        "Missing HTTP content-type header")
+                else:
+                    media_type, params = parse_header(
+                        resp.headers["content-type"])
+                    if media_type.lower() != "text/plain":
+                        self._add_error(
+                            "invalid_media",
+                            "Media type in content-type header must be "
+                            "'text/plain'",
+                        )
+                    charset = params.get('charset', "utf-8").lower()
+                    if charset != "utf-8" and charset != "csutf8":
+                        # According to RFC9116, charset default is utf-8
+                        self._add_error(
+                            "invalid_charset",
+                            "Charset parameter in content-type header must be "
+                            "'utf-8' if present",
+                        )
+                self._content = self._get_str(resp.content)
+                if resp.history:
+                    self._urls = [resp.history[0].url, resp.url]
+                else:
+                    self._urls = [url]
+                # print(resp.history)
+                # self._urls = [url]
+                super()._process()
                 break
         else:
             self._add_error("no_security_txt", "Can not locate security.txt")
-
-    @property
-    def errors(self):
-        return self._errors
-
-    @property
-    def recommendations(self):
-        return self._recommendations
-
-    @property
-    def lines(self):
-        return self._lines
-
-    @property
-    def resolved_url(self) -> Optional[str]:
-        return self._url
-
-    @property
-    def contacts(self):
-        return self._contacts
-
-    @property
-    def contacts(self):
-        return self._contacts
-
-    @property
-    def preferred_languages(self) -> Union[List[str], None]:
-        return self._langs
