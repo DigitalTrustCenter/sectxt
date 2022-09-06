@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: EUPL-1.2
+#
+
 from cgi import parse_header
 from collections import defaultdict
 from datetime import datetime, timezone

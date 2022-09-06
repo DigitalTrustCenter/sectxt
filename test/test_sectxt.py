@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: EUPL-1.2
+#
+
 from datetime import date, timedelta
 from unittest import TestCase
 
