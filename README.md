@@ -21,7 +21,7 @@ True
 >>> s = SecurityTXT("www.example.com")
 >>> s.errors
 [{'code': 'no_uri', 'message': 'The field value must be an URI', 'line': 2}, {'code': 'no_expire', 'message': 'The Expires field is missing', 'line': None}]
->>> s.warnings
+>>> s.recommendations
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
 
