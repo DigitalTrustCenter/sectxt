@@ -2,7 +2,15 @@
 
 This package contains a security.txt (RFC 9116) parser and validator.
 
-Usage:
+## Installation
+
+The package is available on pypi. It can be installed using pip:
+
+```console
+> python -m pip install sectxt
+```
+
+## Usage
 
 ```python
 
@@ -13,7 +21,7 @@ True
 
 ```
 
-# Validation
+## Validation
 
 ```python
 
@@ -34,7 +42,7 @@ a dict with three keys
 | message | A human readable error message in English                                                                  |
 | line    | The 1 based integer line number where the error occurred or None when the error applies to the entire file |
 
-## Possible errors
+### Possible errors
 
 | code                 | message                                                                |
 |----------------------|------------------------------------------------------------------------|
@@ -61,7 +69,7 @@ a dict with three keys
 | "invalid_charset"    | "Charset parameter in content-type header must be 'utf-8' if present." |
 
 
-## Possible recommendations
+### Possible recommendations
 
 | code             | message                                                    |
 |------------------|------------------------------------------------------------|
