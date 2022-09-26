@@ -145,36 +145,36 @@ class Parser:
         if key.rstrip() != key:
             self._add_error(
                 "prec_ws",
-                "There should be no whitespace before the field separator "
-                "(colon)")
+                "There must be no whitespace before the field separator "
+                "(colon).")
             key = key.rstrip()
 
         if value:
             if value[0] != " ":
                 self._add_error(
                     "no_space",
-                    "The field separator (colon) must be followed by a space")
+                    "The field separator (colon) must be followed by a space.")
             value = value.lstrip()
 
         if key == "hash" and self._signed:
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if not key:
-            self._add_error("empty_key", "Field key can not be empty")
+            self._add_error("empty_key", "Field key can not be empty.")
             return {"type": "error", "value": line, "field_name": None}
 
         if not value:
             self._add_error(
-                "empty_value", "Field value can not be empty")
+                "empty_value", "Field value can not be empty.")
             return {"type": "error", "value": line, "field_name": None}
 
         if key in self.uri_fields:
             url_parts = urlsplit(value)
             if url_parts.scheme == "":
                 self._add_error(
-                    "no_uri", "Field value must be an URI")
+                    "no_uri", "Field value must be an URI.")
             elif url_parts.scheme == "http":
-                self._add_error("no_https", "A web URI must be https")
+                self._add_error("no_https", "A web URI must be https.")
         elif key == "expires":
             self._parse_expires(value)
         self._values[key].append(value)
@@ -185,57 +185,58 @@ class Parser:
             date_value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
             self._add_error(
-                "invalid_expiry", "Date in Expires field is invalid")
+                "invalid_expiry", "Date in Expires field is invalid.")
         else:
             self._expires_date = date_value
             if not self.iso8601_re.match(value):
                 # dateutil parses more than just iso8601 format
-                self._add_error("invalid_expiry", "Expiry date is invalid")
+                self._add_error(
+                    "invalid_expiry", "Date in Expires field is invalid.")
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
             if date_value > max_value:
                 self._add_recommendation(
                     "long_expiry",
-                    "Expiry date is more than one year in the future")
+                    "Expiry date is more than one year in the future.")
             elif date_value < now:
-                self._add_error("expired", "Expiry date has passed")
+                self._add_error("expired", "Expiry date has passed.")
 
     def validate_contents(self) -> None:
         if "expires" not in self._values:
-            self._add_error("no_expire", "Expires field is missing")
+            self._add_error("no_expire", "Expires field is missing.")
         elif len(self._values["expires"]) > 1:
             self._add_error(
-                "multi_expire", "Expires field must appear only once")
+                "multi_expire", "Expires field must appear only once.")
         if self._urls and "canonical" in self._values:
             if all(url not in self._values["canonical"] for url in self._urls):
                 self._add_error(
                     "no_canonical_match",
-                    "URL does not match with canonical URLs")
+                    "URL does not match with canonical URLs.")
         if "contact" not in self._values:
             self._add_error(
-                "no_contact", "Contact field must appear at least once")
+                "no_contact", "Contact field must appear at least once.")
         else:
             if (any(v.startswith("mailto:") for v in self._values['contact'])
                     and "encryption" not in self._values):
                 self._add_recommendation(
                     "no_encryption",
-                    "Contact missing encryption key for email communication")
+                    "Contact missing encryption key for email communication.")
         if PREFERRED_LANGUAGES in self._values:
             if len(self._values[PREFERRED_LANGUAGES]) > 1:
                 self._add_error(
                     "multi_lang",
-                    "Multiple Preferred-Languages lines are not allowed")
+                    "Multiple Preferred-Languages lines are not allowed.")
             self._langs = [
                 v.strip()
                 for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
 
         if not self._signed:
             self._add_recommendation(
-                "not_signed", "The contents should be digitally signed")
+                "not_signed", "The contents should be digitally signed.")
         if self._signed and not self._values.get("canonical"):
             self._add_recommendation(
                 "no_canonical",
-                "Canonical field should be present in a signed file")
+                "Canonical field should be present in a signed file.")
 
     def is_valid(self) -> bool:
         return not self._errors
@@ -299,7 +300,7 @@ class SecurityTXT(Parser):
         try:
             return content.decode()
         except UnicodeError:
-            self._add_error("utf8", "Content is not utf-8 encoded")
+            self._add_error("utf8", "Content is not utf-8 encoded.")
         return content.decode(errors="replace")
 
     def _process(self) -> None:
@@ -308,7 +309,7 @@ class SecurityTXT(Parser):
             try:
                 resp = requests.get(url, timeout=5)
             except requests.exceptions.SSLError:
-                self._add_error("invalid_cert", "Invalid certificate")
+                self._add_error("invalid_cert", "Invalid certificate.")
                 try:
                     resp = requests.get(url, timeout=5, verify=False)
                 except:
@@ -322,11 +323,11 @@ class SecurityTXT(Parser):
                     self._add_error(
                         "location",
                         "Security.txt must be located at "
-                        ".well-known/security.txt")
+                        ".well-known/security.txt.")
                 if 'content-type' not in resp.headers:
                     self._add_error(
                         "no_content_type",
-                        "Missing HTTP content-type header")
+                        "Missing HTTP content-type header.")
                 else:
                     media_type, params = parse_header(
                         resp.headers["content-type"])
@@ -334,7 +335,7 @@ class SecurityTXT(Parser):
                         self._add_error(
                             "invalid_media",
                             "Media type in content-type header must be "
-                            "'text/plain'",
+                            "'text/plain'.",
                         )
                     charset = params.get('charset', "utf-8").lower()
                     if charset != "utf-8" and charset != "csutf8":
@@ -342,15 +343,13 @@ class SecurityTXT(Parser):
                         self._add_error(
                             "invalid_charset",
                             "Charset parameter in content-type header must be "
-                            "'utf-8' if present",
+                            "'utf-8' if present.",
                         )
                 self._content = self._get_str(resp.content)
                 if resp.history:
                     self._urls = [resp.history[0].url, resp.url]
                 else:
                     self._urls = [url]
-                # print(resp.history)
-                # self._urls = [url]
                 super()._process()
                 break
         else:
