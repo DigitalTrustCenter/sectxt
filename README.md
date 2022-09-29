@@ -63,7 +63,7 @@ a dict with three keys
 | "no_security_txt"    | "Can not locate security.txt."                                         |
 | "multi_lang"         | "Multiple Preferred-Languages lines are not allowed."                  |
 | "invalid_line"       | "No key and value found."                                              |
-| "invalid_cert"       | "Invalid certificate.                                                  |
+| "invalid_cert"       | "Invalid certificate."                                                |
 | "no_content_type"    | "Missing HTTP content-type header."                                    |
 | "invalid_media"      | "Media type in content-type header must be 'text/plain'.               |
 | "invalid_charset"    | "Charset parameter in content-type header must be 'utf-8' if present." |
@@ -74,6 +74,6 @@ a dict with three keys
 | code             | message                                                    |
 |------------------|------------------------------------------------------------|
 | "long_expiry"    | "Expiry date is more than one year in the future."         |
-| "no_encryption"  | "Contact missing encryption key for email communication.", |
+| "no_encryption"  | "Contact missing encryption key for email communication." |
 | "not_signed"     | "The contents should be digitally signed."                 |
 | "no_canonical"   | "Canonical field should be present in a signed file."      |
