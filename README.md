@@ -48,7 +48,7 @@ a dict with three keys
 |----------------------|------------------------------------------------------------------------------------------------------|
 | "no_security_txt"    | "Security.txt could not be located."                                                                 |
 | "location"           | "Security.txt was located on the top-level path, but must be placed under the '/.well-known/' path." |
-| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate.                                         |
+| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                          |
 | "no_content_type"    | "HTTP Content-Type header must be sent."                                                             |
 | "invalid_media"      | "Media type in Content-Type header must be 'text/plain'.                                             |
 | "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                               |
