@@ -44,36 +44,35 @@ a dict with three keys
 
 ### Possible errors
 
-| code                 | message                                                                |
-|----------------------|------------------------------------------------------------------------|
-| "no_expire"          | "Expires field is missing."                                            |
-| "multi_expire"       | "Expires field must appear only once."                                 |
-| "expired"            | "Expiry date has passed."                                              |
-| "invalid_expiry"     | "Date in Expires field is invalid."                                    |
-| "no_canonical_match" | "URL does not match with canonical URLs."                              |
-| "no_contact"         | "Contact field must appear at least once."                             |
-| "prec_ws"            | "There must be no whitespace before the field separator (colon)."      |
-| "empty_key"          | "Field key can not be empty."                                          | 
-| "no_space"           | "The field separator (colon) must be followed by a space."             |
-| "empty_value"        | "Field value can not be empty."                                        |
-| "no_uri"             | "Field value must be an URI."                                          |
-| "no_https"           | "A web URI must be https."                                             |
-| "utf8"               | "Content is not utf-8 encoded."                                        |
-| "location"           | "Security.txt must be located at .well-known/security.txt."            |
-| "no_security_txt"    | "Can not locate security.txt."                                         |
-| "multi_lang"         | "Multiple Preferred-Languages lines are not allowed."                  |
-| "invalid_line"       | "No key and value found."                                              |
-| "invalid_cert"       | "Invalid certificate.                                                  |
-| "no_content_type"    | "Missing HTTP content-type header."                                    |
-| "invalid_media"      | "Media type in content-type header must be 'text/plain'.               |
-| "invalid_charset"    | "Charset parameter in content-type header must be 'utf-8' if present." |
-
+| code                 | message                                                                                              |
+|----------------------|------------------------------------------------------------------------------------------------------|
+| "no_security_txt"    | "Security.txt could not be located."                                                                 |
+| "location"           | "Security.txt was located on the top-level path, but must be placed under the '/.well-known/' path." |
+| "invalid_cert"       | "Security.txt should be served with a valid TLS certificate.                                         |
+| "no_content_type"    | "HTTP Content-Type header must be sent."                                                             |
+| "invalid_media"      | "Media type in Content-Type header must be 'text/plain'.                                             |
+| "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                               |
+| "utf8"               | "Content must be utf-8 encoded."                                                                     |
+| "no_expire"          | "'Expires' field must be present."                                                                   |
+| "multi_expire"       | "'Expires' field must not appear more than once."                                                    |
+| "invalid_expiry"     | "Date and time in 'Expires' field must be formatted according to ISO 8601."                          | 
+| "expired"            | "Date and time in 'Expires' field must not be in the past."                                          |
+| "no_contact"         | "'Contact' field must appear at least once."                                                         |
+| "no_canonical_match" | "Web URI where security.txt is located must match with a 'Canonical' field."                         |
+| "multi_lang"         | "'Preferred-Languages' field must not appear more than once."                                        |
+| "no_uri"             | "Field value must be a URI (e.g. for mail beginning with 'mailto:')."                                |
+| "no_https"           | "Web URI must begin with 'https://'."                                                                |
+| "prec_ws"            | "There must be no whitespace before the field separator (colon)."                                    |
+| "no_space"           | "The field separator (colon) must be followed by a space."                                           | 
+| "empty_key"          | "Field name must not be empty."                                                                      |
+| "empty_value"        | "Field value must not be empty."                                                                     |
+| "invalid_line"       | "Line must contain a field name and value, unless the line is blank or contains a comment.           |
 
 ### Possible recommendations
 
-| code             | message                                                    |
-|------------------|------------------------------------------------------------|
-| "long_expiry"    | "Expiry date is more than one year in the future."         |
-| "no_encryption"  | "Contact missing encryption key for email communication.", |
-| "not_signed"     | "The contents should be digitally signed."                 |
-| "no_canonical"   | "Canonical field should be present in a signed file."      |
+| code             | message                                                                                                  |
+|------------------|----------------------------------------------------------------------------------------------------------|
+| "long_expiry"    | "Date and time in 'Expires' field should be less than a year into the future."                           |
+| "no_encryption"  | "'Encryption' field should be present when 'Contact' field contains an email address."                   |
+| "not_signed"     | "File should be digitally signed."                                                                       |
+| "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
