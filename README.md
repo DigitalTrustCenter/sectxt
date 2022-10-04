@@ -50,7 +50,7 @@ a dict with three keys
 | "location"           | "Security.txt was located on the top-level path, but must be placed under the '/.well-known/' path." |
 | "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                          |
 | "no_content_type"    | "HTTP Content-Type header must be sent."                                                             |
-| "invalid_media"      | "Media type in Content-Type header must be 'text/plain'.                                             |
+| "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                             |
 | "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                               |
 | "utf8"               | "Content must be utf-8 encoded."                                                                     |
 | "no_expire"          | "'Expires' field must be present."                                                                   |
