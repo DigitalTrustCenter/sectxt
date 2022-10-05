@@ -44,30 +44,30 @@ a dict with three keys
 
 ### Possible errors
 
-| code                 | message                                                                                              |
-|----------------------|------------------------------------------------------------------------------------------------------|
-| "no_security_txt"    | "Security.txt could not be located."                                                                 |
-| "location"           | "Security.txt was located on the top-level path, but must be placed under the '/.well-known/' path." |
-| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                          |
-| "no_content_type"    | "HTTP Content-Type header must be sent."                                                             |
-| "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                            |
-| "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                               |
-| "utf8"               | "Content must be utf-8 encoded."                                                                     |
-| "no_expire"          | "'Expires' field must be present."                                                                   |
-| "multi_expire"       | "'Expires' field must not appear more than once."                                                    |
-| "invalid_expiry"     | "Date and time in 'Expires' field must be formatted according to ISO 8601."                          | 
-| "expired"            | "Date and time in 'Expires' field must not be in the past."                                          |
+| code                 | message                                                                                                                 |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| "no_security_txt"    | "Security.txt could not be located."                                                                                    |
+| "location"           | "Security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."     |
+| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                                             |
+| "no_content_type"    | "HTTP Content-Type header must be sent."                                                                                |
+| "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                                               |
+| "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                                                  |
+| "utf8"               | "Content must be utf-8 encoded."                                                                                        |
+| "no_expire"          | "'Expires' field must be present."                                                                                      |
+| "multi_expire"       | "'Expires' field must not appear more than once."                                                                       |
+| "invalid_expiry"     | "Date and time in 'Expires' field must be formatted according to ISO 8601."                                             | 
+| "expired"            | "Date and time in 'Expires' field must not be in the past."                                                             |
 | "no_contact"         | "'Contact' field must appear at least once."                                                         |
-| "no_canonical_match" | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match."    |
-| "invalid_lang"       | "Invalid 'Preferred-Languages' value '{tag}'. Values must match tags as defined in RFC5646."         |
-| "multi_lang"         | "'Preferred-Languages' field must not appear more than once."                                        |
-| "no_uri"             | "Field value must be a URI (e.g. beginning with 'mailto:')."                                         |
-| "no_https"           | "Web URI must begin with 'https://'."                                                                |
-| "prec_ws"            | "There must be no whitespace before the field separator (colon)."                                    |
-| "no_space"           | "Field separator (colon) must be followed by a space."                                               | 
-| "empty_key"          | "Field name must not be empty."                                                                      |
-| "empty_value"        | "Field value must not be empty."                                                                     |
-| "invalid_line"       | "Line must contain a field name and value, unless the line is blank or contains a comment."          |
+| "no_canonical_match" | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match." |
+| "multi_lang"         | "'Preferred-Languages' field must not appear more than once."  
+| "invalid_lang"       | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas." |
+| "no_uri"             | "Field value must be a URI (e.g. beginning with 'mailto:')."                                                            |
+| "no_https"           | "Web URI must begin with 'https://'."                                                                                   |
+| "prec_ws"            | "There must be no whitespace before the field separator (colon)."                                                       |
+| "no_space"           | "Field separator (colon) must be followed by a space."                                                                  | 
+| "empty_key"          | "Field name must not be empty."                                                                                         |
+| "empty_value"        | "Field value must not be empty."                                                                                        |
+| "invalid_line"       | "Line must contain a field name and value, unless the line is blank or contains a comment."                             |
 
 ### Possible recommendations
 
