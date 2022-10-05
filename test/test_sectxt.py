@@ -139,3 +139,25 @@ class SecTxtTestCase(TestCase):
         content = _signed_example.replace("Expires", "- Expires")
         p = Parser(content)
         self.assertTrue(p.is_valid())
+
+    def test_unknown_fields(self):
+        # Define a security.txt that contains unknown fields (but is valid).
+        # The fields Last-updated and Unknown, should be marked as unknown.
+        content = (
+            f"Expires: {(date.today() + timedelta(days=10)).isoformat()}"
+            "T18:37:07z\n"
+            "Contact: mailto:security@example.com\n"
+            "Last-updated: {date.today().isoformat()}T12:00:00z\n"
+            "Unknown: value\n"
+            "Encryption: https://example.com/pgp-key.txt\n")
+        
+        # By default, recommend that there are unknown fields.
+        p = Parser(content)
+        self.assertTrue(p.is_valid())
+        self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 2)
+        
+        # When turned off, there should be no unknown_field recommendations.
+        p = Parser(content, recommend_unknown_fields=False)
+        self.assertTrue(p.is_valid())
+        self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 0)
+       

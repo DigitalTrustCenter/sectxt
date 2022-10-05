@@ -55,11 +55,14 @@ class Parser:
     uri_fields = [
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
         "policy"]
+        
+    known_fields = uri_fields + [PREFERRED_LANGUAGES, "expires"]
 
     def __init__(
             self,
             content: str,
             urls: Optional[str] = None,
+            recommend_unknown_fields: bool = True,
     ):
         self._urls = strlist_from_arg(urls)
         self._line_info: List[LineDict] = []
@@ -71,6 +74,7 @@ class Parser:
         self._reading_sig = False
         self._finished_sig = False
         self._content = content
+        self.recommend_unknown_fields = recommend_unknown_fields
         self._line_no: Optional[int] = None
         self._process()
 
@@ -265,6 +269,15 @@ class Parser:
             self._add_recommendation(
                 "no_canonical",
                 "'Canonical' field should be present in a signed file.")
+        
+        if self.recommend_unknown_fields:
+            for key in self._values:
+                if not key in self.known_fields:
+                    self._add_recommendation(
+                        "unknown_field",
+                        f"Unknown field name '{key}'. "
+                        "Permitted, but not syntax checked and probably "
+                        "widely unsupported.")
 
     def is_valid(self) -> bool:
         return not self._errors
@@ -311,7 +324,7 @@ CORRECT_PATH = ".well-known/security.txt"
 
 class SecurityTXT(Parser):
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, recommend_unknown_fields: bool = True):
         url_parts = urlsplit(url)
         if url_parts.scheme:
             if not url_parts.netloc:
@@ -322,7 +335,7 @@ class SecurityTXT(Parser):
         self._netloc = netloc
         self._path: Optional[str] = None
         self._url: Optional[str] = None
-        super().__init__('')
+        super().__init__('', recommend_unknown_fields=recommend_unknown_fields)
 
     def _get_str(self, content: bytes) -> str:
         try:

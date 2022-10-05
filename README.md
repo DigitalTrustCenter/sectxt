@@ -77,3 +77,11 @@ a dict with three keys
 | "no_encryption"  | "'Encryption' field should be present when 'Contact' field contains an email address."                   |
 | "not_signed"     | "File should be digitally signed."                                                                       |
 | "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
+| "unknown_field"  | "Unknown field name '{name}'. Permitted, but not syntax checked and probably widely unsupported."        |
+
+According to RFC 9116 section 2.4, any fields that are not explicitly supported should be ignored. This parser does add a recommendation for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
+```python
+
+>>> from sectxt import SecurityTXT
+>>> s = SecurityTXT("www.example.com", recommend_unknown_fields=False)
+```
