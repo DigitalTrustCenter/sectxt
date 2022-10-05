@@ -184,6 +184,17 @@ class Parser:
                     "Web URI must begin with 'https://'.")
         elif key == "expires":
             self._parse_expires(value)
+        elif key == PREFERRED_LANGUAGES:
+            self._langs = [v.strip() for v in value.split(",")]
+                
+            # Check if all the languages are valid according to RFC5646.
+            for lang in self._langs:
+                if not langcodes.tag_is_valid(lang):
+                    self._add_error(
+                        "invalid_lang",
+                        f"Invalid 'Preferred-Languages' value '{lang}'. "
+                        "Values must match tags as defined in RFC5646.")
+        
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
 
@@ -246,17 +257,6 @@ class Parser:
                     "multi_lang",
                     "'Preferred-Languages' field must not appear more "
                     "than once.")
-            self._langs = [
-                v.strip()
-                for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
-                
-            # Check if all the languages are valid according to RFC5646.
-            for lang in self._langs:
-                if not langcodes.tag_is_valid(lang):
-                    self._add_error(
-                        "invalid_lang",
-                        f"Invalid 'Preferred-Languages' value '{lang}'. "
-                        "Values must match tags as defined in RFC5646.")
 
         if not self._signed:
             self._add_recommendation(
