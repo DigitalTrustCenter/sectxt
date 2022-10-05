@@ -9,6 +9,7 @@ import re
 from typing import Optional, Union, List, DefaultDict
 import sys
 from urllib.parse import urlsplit, urlunsplit
+import langcodes
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
@@ -248,6 +249,14 @@ class Parser:
             self._langs = [
                 v.strip()
                 for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
+                
+            # Check if all the languages are valid according to RFC5646.
+            for lang in self._langs:
+                if not langcodes.tag_is_valid(lang):
+                    self._add_error(
+                        "invalid_lang",
+                        f"Invalid 'Preferred-Languages' value '{lang}'. "
+                        "Values must match tags as defined in RFC5646.")
 
         if not self._signed:
             self._add_recommendation(
