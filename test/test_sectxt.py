@@ -61,6 +61,34 @@ class SecTxtTestCase(TestCase):
         line_info = p._line_info[1]
         self.assertEqual(line_info["type"], "comment")
         self.assertEqual(line_info["value"], "# Wow")
+        
+    def test_preferred_languages(self):
+        # Define content for a valid security.txt.
+        static_content = (
+            f"Expires: {(date.today() + timedelta(days=10)).isoformat()}"
+            "T18:37:07z\n"
+            "Contact: mailto:security@example.com\n")
+   
+        # Single invalid value.
+        content = static_content + "Preferred-Languages: English"
+        p = Parser(content)
+        self.assertEqual(p._errors[0]["code"], "invalid_lang")
+        
+        # Mix of valid and invalid value.
+        content = static_content + "Preferred-Languages: nl, Invalid"
+        p = Parser(content)
+        self.assertEqual(p._errors[0]["code"], "invalid_lang")
+        
+        # Both ISO 639-1 (2 char) and ISO 639-2 (3 char) should be valid.
+        # Case should be ignored.
+        content = static_content + "Preferred-Languages: En, dUT"
+        p = Parser(content)
+        self.assertFalse(
+            any(
+                error["code"] == "invalid_lang" 
+                for error in p._errors
+            )
+        )
 
     def test_prec_ws(self):
         content = "Contact : mailto:me@example.com\n# Wow"
