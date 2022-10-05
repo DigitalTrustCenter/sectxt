@@ -134,7 +134,10 @@ class Parser:
             return self._parse_field(line)
 
         if line:
-            self._add_error("invalid_line", "No key and value found")
+            self._add_error(
+                "invalid_line", 
+                "Line must contain a field name and value, "
+                "unless the line is blank or contains a comment.")
             return {"type": "error", "value": line, "field_name": None}
 
         return {"type": "empty", "value": "", "field_name": None}
@@ -153,28 +156,31 @@ class Parser:
             if value[0] != " ":
                 self._add_error(
                     "no_space",
-                    "The field separator (colon) must be followed by a space.")
+                    "Field separator (colon) must be followed by a space.")
             value = value.lstrip()
 
         if key == "hash" and self._signed:
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if not key:
-            self._add_error("empty_key", "Field key can not be empty.")
+            self._add_error("empty_key", "Field name must not be empty.")
             return {"type": "error", "value": line, "field_name": None}
 
         if not value:
             self._add_error(
-                "empty_value", "Field value can not be empty.")
+                "empty_value", "Field value must not be empty.")
             return {"type": "error", "value": line, "field_name": None}
 
         if key in self.uri_fields:
             url_parts = urlsplit(value)
             if url_parts.scheme == "":
                 self._add_error(
-                    "no_uri", "Field value must be an URI.")
+                    "no_uri", "Field value must be a URI "
+                    "(e.g. beginning with 'mailto:').")
             elif url_parts.scheme == "http":
-                self._add_error("no_https", "A web URI must be https.")
+                self._add_error(
+                    "no_https", 
+                    "Web URI must begin with 'https://'.")
         elif key == "expires":
             self._parse_expires(value)
         self._values[key].append(value)
@@ -185,58 +191,71 @@ class Parser:
             date_value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
             self._add_error(
-                "invalid_expiry", "Date in Expires field is invalid.")
+                "invalid_expiry", 
+                "Date and time in 'Expires' field must be formatted "
+                "according to ISO 8601.")
         else:
             self._expires_date = date_value
             if not self.iso8601_re.match(value):
                 # dateutil parses more than just iso8601 format
                 self._add_error(
-                    "invalid_expiry", "Date in Expires field is invalid.")
+                    "invalid_expiry", 
+                    "Date and time in 'Expires' field must be formatted "
+                    "according to ISO 8601.")
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
             if date_value > max_value:
                 self._add_recommendation(
                     "long_expiry",
-                    "Expiry date is more than one year in the future.")
+                    "Date and time in 'Expires' field should be less than "
+                    "a year into the future.")
             elif date_value < now:
-                self._add_error("expired", "Expiry date has passed.")
+                self._add_error(
+                    "expired", 
+                    "Date and time in 'Expires' field must not be in "
+                    "the past.")
 
     def validate_contents(self) -> None:
         if "expires" not in self._values:
-            self._add_error("no_expire", "Expires field is missing.")
+            self._add_error("no_expire", "'Expires' field must be present.")
         elif len(self._values["expires"]) > 1:
             self._add_error(
-                "multi_expire", "Expires field must appear only once.")
+                "multi_expire", "'Expires' field must not appear more "
+                "than once.")
         if self._urls and "canonical" in self._values:
             if all(url not in self._values["canonical"] for url in self._urls):
                 self._add_error(
                     "no_canonical_match",
-                    "URL does not match with canonical URLs.")
+                    "Web URI where security.txt is located must match with a "
+                    "'Canonical' field. In case of redirecting either the "
+                    "first or last web URI of the redirect chain must match.")
         if "contact" not in self._values:
             self._add_error(
-                "no_contact", "Contact field must appear at least once.")
+                "no_contact", "'Contact' field must appear at least once.")
         else:
             if (any(v.startswith("mailto:") for v in self._values['contact'])
                     and "encryption" not in self._values):
                 self._add_recommendation(
                     "no_encryption",
-                    "Contact missing encryption key for email communication.")
+                    "'Encryption' field should be present when 'Contact' "
+                    "field contains an email address.")
         if PREFERRED_LANGUAGES in self._values:
             if len(self._values[PREFERRED_LANGUAGES]) > 1:
                 self._add_error(
                     "multi_lang",
-                    "Multiple Preferred-Languages lines are not allowed.")
+                    "'Preferred-Languages' field must not appear more "
+                    "than once.")
             self._langs = [
                 v.strip()
                 for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
 
         if not self._signed:
             self._add_recommendation(
-                "not_signed", "The contents should be digitally signed.")
+                "not_signed", "File should be digitally signed.")
         if self._signed and not self._values.get("canonical"):
             self._add_recommendation(
                 "no_canonical",
-                "Canonical field should be present in a signed file.")
+                "'Canonical' field should be present in a signed file.")
 
     def is_valid(self) -> bool:
         return not self._errors
@@ -300,7 +319,7 @@ class SecurityTXT(Parser):
         try:
             return content.decode()
         except UnicodeError:
-            self._add_error("utf8", "Content is not utf-8 encoded.")
+            self._add_error("utf8", "Content must be utf-8 encoded.")
         return content.decode(errors="replace")
 
     def _process(self) -> None:
@@ -309,7 +328,8 @@ class SecurityTXT(Parser):
             try:
                 resp = requests.get(url, timeout=5)
             except requests.exceptions.SSLError:
-                self._add_error("invalid_cert", "Invalid certificate.")
+                self._add_error("invalid_cert", "Security.txt must be "
+                    "served with a valid TLS certificate.")
                 try:
                     resp = requests.get(url, timeout=5, verify=False)
                 except:
@@ -322,19 +342,19 @@ class SecurityTXT(Parser):
                 if path != CORRECT_PATH:
                     self._add_error(
                         "location",
-                        "Security.txt must be located at "
-                        ".well-known/security.txt.")
+                        "Security.txt was located on the top-level path, "
+                        "but must be placed under the '/.well-known/' path.")
                 if 'content-type' not in resp.headers:
                     self._add_error(
                         "no_content_type",
-                        "Missing HTTP content-type header.")
+                        "HTTP Content-Type header must be sent.")
                 else:
                     media_type, params = parse_header(
                         resp.headers["content-type"])
                     if media_type.lower() != "text/plain":
                         self._add_error(
                             "invalid_media",
-                            "Media type in content-type header must be "
+                            "Media type in Content-Type header must be "
                             "'text/plain'.",
                         )
                     charset = params.get('charset', "utf-8").lower()
@@ -342,7 +362,7 @@ class SecurityTXT(Parser):
                         # According to RFC9116, charset default is utf-8
                         self._add_error(
                             "invalid_charset",
-                            "Charset parameter in content-type header must be "
+                            "Charset parameter in Content-Type header must be "
                             "'utf-8' if present.",
                         )
                 self._content = self._get_str(resp.content)
@@ -353,4 +373,4 @@ class SecurityTXT(Parser):
                 super()._process()
                 break
         else:
-            self._add_error("no_security_txt", "Can not locate security.txt")
+            self._add_error("no_security_txt", "Security.txt could not be located.")

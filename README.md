@@ -58,7 +58,7 @@ a dict with three keys
 | "invalid_expiry"     | "Date and time in 'Expires' field must be formatted according to ISO 8601."                          | 
 | "expired"            | "Date and time in 'Expires' field must not be in the past."                                          |
 | "no_contact"         | "'Contact' field must appear at least once."                                                         |
-| "no_canonical_match" | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match. The latter is an interpretation as the security.txt specification is not clear in this regard."    |
+| "no_canonical_match" | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match."    |
 | "multi_lang"         | "'Preferred-Languages' field must not appear more than once."                                        |
 | "no_uri"             | "Field value must be a URI (e.g. beginning with 'mailto:')."                                         |
 | "no_https"           | "Web URI must begin with 'https://'."                                                                |
