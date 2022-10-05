@@ -198,6 +198,13 @@ class Parser:
                         "invalid_lang",
                         f"Invalid 'Preferred-Languages' value '{lang}'. "
                         "Values must match tags as defined in RFC5646.")
+            
+        if self.recommend_unknown_fields and not key in self.known_fields:
+            self._add_recommendation(
+                "unknown_field",
+                f"Unknown field name '{key}'. "
+                "Permitted, but not syntax checked and probably "
+                "widely unsupported.")
         
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
@@ -269,15 +276,6 @@ class Parser:
             self._add_recommendation(
                 "no_canonical",
                 "'Canonical' field should be present in a signed file.")
-        
-        if self.recommend_unknown_fields:
-            for key in self._values:
-                if not key in self.known_fields:
-                    self._add_recommendation(
-                        "unknown_field",
-                        f"Unknown field name '{key}'. "
-                        "Permitted, but not syntax checked and probably "
-                        "widely unsupported.")
 
     def is_valid(self) -> bool:
         return not self._errors
