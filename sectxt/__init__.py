@@ -196,8 +196,9 @@ class Parser:
                 if not langcodes.tag_is_valid(lang):
                     self._add_error(
                         "invalid_lang",
-                        f"Invalid 'Preferred-Languages' value '{lang}'. "
-                        "Values must match tags as defined in RFC5646.")
+                        "Value in 'Preferred-Languages' field must match one "
+                        "or more language tags as defined in RFC5646, "
+                        "separated by commas.")
             
         if self.recommend_unknown_fields and not key in self.known_fields:
             self._add_recommendation(
@@ -362,8 +363,9 @@ class SecurityTXT(Parser):
                 if path != CORRECT_PATH:
                     self._add_error(
                         "location",
-                        "Security.txt was located on the top-level path, "
-                        "but must be placed under the '/.well-known/' path.")
+                        "Security.txt was located on the top-level path "
+                        "(legacy place), but must be placed under "
+                        "the '/.well-known/' path.")
                 if 'content-type' not in resp.headers:
                     self._add_error(
                         "no_content_type",
