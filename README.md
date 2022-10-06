@@ -86,7 +86,7 @@ a dict with three keys:
 
 ---
 
-<sup>[1]</sup> Regarding code "unknown_field": According to RFC 9116 section 2.4, any fields that are not explicitly supported should be ignored. This parser does add a notification for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
+1. Regarding code "unknown_field": According to RFC 9116 section 2.4, any fields that are not explicitly supported should be ignored. This parser does add a notification for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
 ```python
 
 >>> from sectxt import SecurityTXT
