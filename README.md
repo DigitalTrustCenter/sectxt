@@ -82,7 +82,7 @@ a dict with three keys:
 
 | code             | message                                                                                                  |
 |------------------|----------------------------------------------------------------------------------------------------------|
-| "unknown_field"  | "File contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name."<sup>[1]</sup> |
+| "unknown_field"<sup>[1]</sup>  | "File contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name." |
 
 ---
 
