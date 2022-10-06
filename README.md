@@ -75,14 +75,14 @@ a dict with three keys:
 |------------------|----------------------------------------------------------------------------------------------------------|
 | "long_expiry"    | "Date and time in 'Expires' field should be less than a year into the future."                           |
 | "no_encryption"  | "'Encryption' field should be present when 'Contact' field contains an email address."                   |
-| "not_signed"     | "File should be digitally signed."                                                                       |
+| "not_signed"     | "Security.txt should be digitally signed."                                                                       |
 | "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
 
 ### Possible notifications
 
 | code             | message                                                                                                  |
 |------------------|----------------------------------------------------------------------------------------------------------|
-| "unknown_field"<sup>[1]</sup>  | "File contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name." |
+| "unknown_field"<sup>[1]</sup>  | "Security.txt contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name." |
 
 ---
 
