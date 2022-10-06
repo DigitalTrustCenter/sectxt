@@ -33,7 +33,7 @@ True
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
 
-The "errors" and "recommendations" attribute return a list of entries. An entry is
+The "errors", "recommendations" and "notifications" attribute return a list of entries. An entry is
 a dict with three keys:
 
 | key     | value                                                                                                      |
