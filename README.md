@@ -34,7 +34,7 @@ True
 ```
 
 The "errors" and "recommendations" attribute return a list of entries. An entry is
-a dict with three keys
+a dict with three keys:
 
 | key     | value                                                                                                      |
 |---------|------------------------------------------------------------------------------------------------------------|
