@@ -78,7 +78,7 @@ a dict with three keys:
 | "not_signed"     | "File should be digitally signed."                                                                       |
 | "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
 
-### Possible informational messages
+### Possible notifications
 
 | code             | message                                                                                                  |
 |------------------|----------------------------------------------------------------------------------------------------------|
