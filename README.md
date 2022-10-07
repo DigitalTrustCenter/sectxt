@@ -46,9 +46,9 @@ a dict with three keys:
 
 | code                 | message                                                                                                                 |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------|
-| "no_security_txt"    | "Security.txt could not be located."                                                                                    |
-| "location"           | "Security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."     |
-| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                                             |
+| "no_security_txt"    | "security.txt could not be located."                                                                                    |
+| "location"           | "security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."     |
+| "invalid_cert"       | "security.txt must be served with a valid TLS certificate."                                                             |
 | "no_content_type"    | "HTTP Content-Type header must be sent."                                                                                |
 | "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                                               |
 | "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                                                  |
@@ -75,7 +75,7 @@ a dict with three keys:
 |------------------|----------------------------------------------------------------------------------------------------------|
 | "long_expiry"    | "Date and time in 'Expires' field should be less than a year into the future."                           |
 | "no_encryption"  | "'Encryption' field should be present when 'Contact' field contains an email address."                   |
-| "not_signed"     | "Security.txt should be digitally signed."                                                                       |
+| "not_signed"     | "security.txt should be digitally signed."                                                                       |
 | "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
 
 ### Possible notifications
