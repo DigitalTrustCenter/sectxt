@@ -33,7 +33,7 @@ True
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
 
-The "errors" and "recommendations" attribute return a list of entries. An entry is
+The "errors", "recommendations" and "notifications" attribute return a list of entries. An entry is
 a dict with three keys:
 
 | key     | value                                                                                                      |
@@ -46,9 +46,9 @@ a dict with three keys:
 
 | code                 | message                                                                                                                 |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------|
-| "no_security_txt"    | "Security.txt could not be located."                                                                                    |
-| "location"           | "Security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."     |
-| "invalid_cert"       | "Security.txt must be served with a valid TLS certificate."                                                             |
+| "no_security_txt"    | "security.txt could not be located."                                                                                    |
+| "location"           | "security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."     |
+| "invalid_cert"       | "security.txt must be served with a valid TLS certificate."                                                             |
 | "no_content_type"    | "HTTP Content-Type header must be sent."                                                                                |
 | "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                                               |
 | "invalid_charset"    | "Charset parameter in Content-Type header must be 'utf-8' if present."                                                  |
@@ -75,11 +75,18 @@ a dict with three keys:
 |------------------|----------------------------------------------------------------------------------------------------------|
 | "long_expiry"    | "Date and time in 'Expires' field should be less than a year into the future."                           |
 | "no_encryption"  | "'Encryption' field should be present when 'Contact' field contains an email address."                   |
-| "not_signed"     | "File should be digitally signed."                                                                       |
+| "not_signed"     | "security.txt should be digitally signed."                                                                       |
 | "no_canonical"   | "'Canonical' field should be present in a signed file."                                                  |
-| "unknown_field"  | "Unknown field name '{name}'. Permitted, but not syntax checked and probably widely unsupported."        |
 
-According to RFC 9116 section 2.4, any fields that are not explicitly supported should be ignored. This parser does add a recommendation for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
+### Possible notifications
+
+| code             | message                                                                                                  |
+|------------------|----------------------------------------------------------------------------------------------------------|
+| "unknown_field"<sup>[1]</sup>  | "Security.txt contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name." |
+
+---
+
+[1] Regarding code "unknown_field": According to RFC 9116 section 2.4, any fields that are not explicitly supported should be ignored. This parser does add a notification for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
 ```python
 
 >>> from sectxt import SecurityTXT
