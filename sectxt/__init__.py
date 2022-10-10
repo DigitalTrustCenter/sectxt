@@ -203,9 +203,9 @@ class Parser:
         if self.recommend_unknown_fields and not key in self.known_fields:
             self._add_recommendation(
                 "unknown_field",
-                f"Unknown field name '{key}'. "
-                "Permitted, but not syntax checked and probably "
-                "widely unsupported.")
+                "security.txt contains an unknown field. "
+                "Either this is a custom field which may not be widely "
+                "supported, or there is a typo in a standardised field name.")
         
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
@@ -272,7 +272,7 @@ class Parser:
 
         if not self._signed:
             self._add_recommendation(
-                "not_signed", "File should be digitally signed.")
+                "not_signed", "security.txt should be digitally signed.")
         if self._signed and not self._values.get("canonical"):
             self._add_recommendation(
                 "no_canonical",
@@ -349,7 +349,7 @@ class SecurityTXT(Parser):
             try:
                 resp = requests.get(url, timeout=5)
             except requests.exceptions.SSLError:
-                self._add_error("invalid_cert", "Security.txt must be "
+                self._add_error("invalid_cert", "security.txt must be "
                     "served with a valid TLS certificate.")
                 try:
                     resp = requests.get(url, timeout=5, verify=False)
@@ -363,7 +363,7 @@ class SecurityTXT(Parser):
                 if path != CORRECT_PATH:
                     self._add_error(
                         "location",
-                        "Security.txt was located on the top-level path "
+                        "security.txt was located on the top-level path "
                         "(legacy place), but must be placed under "
                         "the '/.well-known/' path.")
                 if 'content-type' not in resp.headers:
@@ -395,4 +395,4 @@ class SecurityTXT(Parser):
                 super()._process()
                 break
         else:
-            self._add_error("no_security_txt", "Security.txt could not be located.")
+            self._add_error("no_security_txt", "security.txt could not be located.")
