@@ -38,7 +38,7 @@ Version: GnuPG v2.2
 class SecTxtTestCase(TestCase):
 
     def test_future_expires(self):
-        content = f"Expires: {date.today().year + 3}-01-01T12:00Z\n"
+        content = f"Expires: {date.today().year + 3}-01-01T12:00:00Z\n"
         p = Parser(content)
         self.assertEqual(p._recommendations[0]["code"], "long_expiry")
 
@@ -56,7 +56,7 @@ class SecTxtTestCase(TestCase):
         self.assertEqual(p._errors[0]["code"], "expired")
 
     def test_long_expiry(self):
-        content = "Expires: 2030-01-01T12:00Z\n# Wow"
+        content = "Expires: 2030-01-01T12:00:00Z\n# Wow"
         p = Parser(content)
         line_info = p._line_info[1]
         self.assertEqual(line_info["type"], "comment")

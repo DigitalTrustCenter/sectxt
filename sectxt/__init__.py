@@ -226,6 +226,11 @@ class Parser:
                     "invalid_expiry", 
                     "Date and time in 'Expires' field must be formatted "
                     "according to ISO 8601.")
+                # Stop to prevent errors when comparing the current datetime, 
+                # which is set with a timezone, and the parsed date, that
+                # could potentially not have a timezone.
+                return
+                
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
             if date_value > max_value:
