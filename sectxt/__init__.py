@@ -20,7 +20,7 @@ import dateutil.parser
 import requests
 
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 s = requests.Session()
 
