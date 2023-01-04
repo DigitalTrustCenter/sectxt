@@ -83,8 +83,6 @@ class Parser:
             self._line_info.append(self._parse_line(line))
             self._line_no += 1
         self._line_no = None
-        if self._line_info and self._line_info[-1]["type"] == "empty":
-            del self._line_info[-1]
         self.validate_contents()
 
     def _add_error(
@@ -256,7 +254,7 @@ class Parser:
                     "Web URI where security.txt is located must match with a "
                     "'Canonical' field. In case of redirecting either the "
                     "first or last web URI of the redirect chain must match.")
-        if len(self.lines) == 1:
+        if self.lines[-1]["type"] != 'empty':
             self._add_error("no_line_separators",
                             "Every line must end with either a carriage "
                             "return and line feed characters or just a line "

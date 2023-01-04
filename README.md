@@ -50,7 +50,7 @@ a dict with three keys:
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "no_security_txt"    | "security.txt could not be located."                                                                                                                                   |
 | "location"           | "security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."                                                    |
-| "invalid_uri_scheme" | "Insecure URI scheme HTTP is not allowed. The security.txt file access must use the 'https' scheme"                                                                    |
+| "invalid_uri_scheme" | "Insecure URI scheme HTTP is not allowed. The security.txt file access must use the HTTPS scheme"                                                                      |
 | "invalid_cert"       | "security.txt must be served with a valid TLS certificate."                                                                                                            |
 | "no_content_type"    | "HTTP Content-Type header must be sent."                                                                                                                               |
 | "invalid_media"      | "Media type in Content-Type header must be 'text/plain'."                                                                                                              |
