@@ -5,7 +5,11 @@
 from datetime import date, timedelta
 from unittest import TestCase
 
-from sectxt import Parser
+import pytest
+
+from sectxt import Parser, SecurityTXT
+import requests
+from requests_mock.mocker import Mocker
 
 
 _signed_example = f"""-----BEGIN PGP SIGNED MESSAGE-----
@@ -160,4 +164,23 @@ class SecTxtTestCase(TestCase):
         p = Parser(content, recommend_unknown_fields=False)
         self.assertTrue(p.is_valid())
         self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 0)
-       
+
+
+def test_not_correct_path(requests_mock: Mocker):
+    with Mocker() as m:
+        m.get('https://example.com/.well-known/security.txt', exc=requests.exceptions.ConnectTimeout)
+        m.get('https://example.com/security.txt', text=_signed_example)
+        s = SecurityTXT('example.com')
+        if not any(d['code'] == 'location' for d in s.errors):
+            pytest.fail("location error code should be given")
+
+
+def test_invalid_uri_scheme(requests_mock: Mocker):
+    with Mocker() as m:
+        m.get('https://example.com/.well-known/security.txt', exc=requests.exceptions.ConnectTimeout)
+        m.get('https://example.com/security.txt', exc=requests.exceptions.ConnectTimeout)
+        m.get('http://example.com/.well-known/security.txt', text=_signed_example)
+        s = SecurityTXT('example.com')
+        if not any(d['code'] == 'invalid_uri_scheme' for d in s.errors):
+            pytest.fail("invalid_uri_scheme error code should be given")
+
