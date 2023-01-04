@@ -1,16 +1,12 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
-
+import pytest
+import requests
 from datetime import date, timedelta
 from unittest import TestCase
-
-import pytest
-
 from sectxt import Parser, SecurityTXT
-import requests
 from requests_mock.mocker import Mocker
-
 
 _signed_example = f"""-----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
@@ -65,31 +61,31 @@ class SecTxtTestCase(TestCase):
         line_info = p._line_info[1]
         self.assertEqual(line_info["type"], "comment")
         self.assertEqual(line_info["value"], "# Wow")
-        
+
     def test_preferred_languages(self):
         # Define content for a valid security.txt.
         static_content = (
             f"Expires: {(date.today() + timedelta(days=10)).isoformat()}"
             "T18:37:07z\n"
             "Contact: mailto:security@example.com\n")
-   
+
         # Single invalid value.
         content = static_content + "Preferred-Languages: English"
         p = Parser(content)
         self.assertEqual(p._errors[0]["code"], "invalid_lang")
-        
+
         # Mix of valid and invalid value.
         content = static_content + "Preferred-Languages: nl, Invalid"
         p = Parser(content)
         self.assertEqual(p._errors[0]["code"], "invalid_lang")
-        
+
         # Both ISO 639-1 (2 char) and ISO 639-2 (3 char) should be valid.
         # Case should be ignored.
         content = static_content + "Preferred-Languages: En, dUT"
         p = Parser(content)
         self.assertFalse(
             any(
-                error["code"] == "invalid_lang" 
+                error["code"] == "invalid_lang"
                 for error in p._errors
             )
         )
@@ -154,16 +150,22 @@ class SecTxtTestCase(TestCase):
             "Last-updated: {date.today().isoformat()}T12:00:00z\n"
             "Unknown: value\n"
             "Encryption: https://example.com/pgp-key.txt\n")
-        
+
         # By default, recommend that there are unknown fields.
         p = Parser(content)
         self.assertTrue(p.is_valid())
         self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 2)
-        
+
         # When turned off, there should be no unknown_field recommendations.
         p = Parser(content, recommend_unknown_fields=False)
         self.assertTrue(p.is_valid())
         self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 0)
+
+    def test_no_line_separators(self):
+        single_line_security_txt = f"Contact: mailto:security@example.com  Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z  # All on a single line"
+        p = Parser(single_line_security_txt)
+        self.assertFalse(p.is_valid())
+        self.assertEqual(len([1 for r in p._errors if r["code"] == "no_line_separators"]), 1)
 
 
 def test_not_correct_path(requests_mock: Mocker):
@@ -183,4 +185,3 @@ def test_invalid_uri_scheme(requests_mock: Mocker):
         s = SecurityTXT('example.com')
         if not any(d['code'] == 'invalid_uri_scheme' for d in s.errors):
             pytest.fail("invalid_uri_scheme error code should be given")
-
