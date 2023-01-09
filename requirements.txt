@@ -1,3 +1,5 @@
 requests
 python-dateutil
 langcodes
+pytest
+requests-mock

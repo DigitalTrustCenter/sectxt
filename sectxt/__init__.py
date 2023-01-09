@@ -1,15 +1,14 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
-
+import langcodes
+import re
+import sys
 from cgi import parse_header
 from collections import defaultdict
 from datetime import datetime, timezone
-import re
 from typing import Optional, Union, List, DefaultDict
-import sys
 from urllib.parse import urlsplit, urlunsplit
-import langcodes
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
@@ -18,7 +17,6 @@ else:
 
 import dateutil.parser
 import requests
-
 
 __version__ = "0.7"
 
@@ -55,7 +53,7 @@ class Parser:
     uri_fields = [
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
         "policy"]
-        
+
     known_fields = uri_fields + [PREFERRED_LANGUAGES, "expires"]
 
     def __init__(
@@ -85,8 +83,6 @@ class Parser:
             self._line_info.append(self._parse_line(line))
             self._line_no += 1
         self._line_no = None
-        if self._line_info and self._line_info[-1]["type"] == "empty":
-            del self._line_info[-1]
         self.validate_contents()
 
     def _add_error(
@@ -140,7 +136,7 @@ class Parser:
 
         if line:
             self._add_error(
-                "invalid_line", 
+                "invalid_line",
                 "Line must contain a field name and value, "
                 "unless the line is blank or contains a comment.")
             return {"type": "error", "value": line, "field_name": None}
@@ -181,16 +177,16 @@ class Parser:
             if url_parts.scheme == "":
                 self._add_error(
                     "no_uri", "Field value must be a URI "
-                    "(e.g. beginning with 'mailto:').")
+                              "(e.g. beginning with 'mailto:').")
             elif url_parts.scheme == "http":
                 self._add_error(
-                    "no_https", 
+                    "no_https",
                     "Web URI must begin with 'https://'.")
         elif key == "expires":
             self._parse_expires(value)
         elif key == PREFERRED_LANGUAGES:
             self._langs = [v.strip() for v in value.split(",")]
-                
+
             # Check if all the languages are valid according to RFC5646.
             for lang in self._langs:
                 if not langcodes.tag_is_valid(lang):
@@ -199,14 +195,14 @@ class Parser:
                         "Value in 'Preferred-Languages' field must match one "
                         "or more language tags as defined in RFC5646, "
                         "separated by commas.")
-            
+
         if self.recommend_unknown_fields and not key in self.known_fields:
             self._add_recommendation(
                 "unknown_field",
                 "security.txt contains an unknown field. "
                 "Either this is a custom field which may not be widely "
                 "supported, or there is a typo in a standardised field name.")
-        
+
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
 
@@ -215,7 +211,7 @@ class Parser:
             date_value = dateutil.parser.parse(value)
         except dateutil.parser.ParserError:
             self._add_error(
-                "invalid_expiry", 
+                "invalid_expiry",
                 "Date and time in 'Expires' field must be formatted "
                 "according to ISO 8601.")
         else:
@@ -223,14 +219,14 @@ class Parser:
             if not self.iso8601_re.match(value):
                 # dateutil parses more than just iso8601 format
                 self._add_error(
-                    "invalid_expiry", 
+                    "invalid_expiry",
                     "Date and time in 'Expires' field must be formatted "
                     "according to ISO 8601.")
                 # Stop to prevent errors when comparing the current datetime, 
                 # which is set with a timezone, and the parsed date, that
                 # could potentially not have a timezone.
                 return
-                
+
             now = datetime.now(timezone.utc)
             max_value = now.replace(year=now.year + 1)
             if date_value > max_value:
@@ -240,7 +236,7 @@ class Parser:
                     "a year into the future.")
             elif date_value < now:
                 self._add_error(
-                    "expired", 
+                    "expired",
                     "Date and time in 'Expires' field must not be in "
                     "the past.")
 
@@ -249,8 +245,8 @@ class Parser:
             self._add_error("no_expire", "'Expires' field must be present.")
         elif len(self._values["expires"]) > 1:
             self._add_error(
-                "multi_expire", "'Expires' field must not appear more "
-                "than once.")
+                "multi_expire",
+                "'Expires' field must not appear more than once.")
         if self._urls and "canonical" in self._values:
             if all(url not in self._values["canonical"] for url in self._urls):
                 self._add_error(
@@ -258,6 +254,11 @@ class Parser:
                     "Web URI where security.txt is located must match with a "
                     "'Canonical' field. In case of redirecting either the "
                     "first or last web URI of the redirect chain must match.")
+        if self.lines[-1]["type"] != 'empty':
+            self._add_error("no_line_separators",
+                            "Every line must end with either a carriage "
+                            "return and line feed characters or just a line "
+                            "feed character")
         if "contact" not in self._values:
             self._add_error(
                 "no_contact", "'Contact' field must appear at least once.")
@@ -349,55 +350,66 @@ class SecurityTXT(Parser):
         return content.decode(errors="replace")
 
     def _process(self) -> None:
-        for path in [".well-known/security.txt", "security.txt"]:
-            url = urlunsplit(("https", self._netloc, path, None, None))
-            try:
-                resp = requests.get(url, timeout=5)
-            except requests.exceptions.SSLError:
-                self._add_error("invalid_cert", "security.txt must be "
-                    "served with a valid TLS certificate.")
+        security_txt_found = False
+        for scheme in ["https", "http"]:
+            for path in [".well-known/security.txt", "security.txt"]:
+                url = urlunsplit((scheme, self._netloc, path, None, None))
                 try:
-                    resp = requests.get(url, timeout=5, verify=False)
+                    resp = requests.get(url, timeout=5)
+                except requests.exceptions.SSLError:
+                    self._add_error("invalid_cert", "security.txt must be "
+                                                    "served with a valid TLS certificate.")
+                    try:
+                        resp = requests.get(url, timeout=5, verify=False)
+                    except:
+                        continue
                 except:
                     continue
-            except:
-                continue
-            if resp.status_code == 200:
-                self._path = path
-                self._url = url
-                if path != CORRECT_PATH:
-                    self._add_error(
-                        "location",
-                        "security.txt was located on the top-level path "
-                        "(legacy place), but must be placed under "
-                        "the '/.well-known/' path.")
-                if 'content-type' not in resp.headers:
-                    self._add_error(
-                        "no_content_type",
-                        "HTTP Content-Type header must be sent.")
-                else:
-                    media_type, params = parse_header(
-                        resp.headers["content-type"])
-                    if media_type.lower() != "text/plain":
+                if resp.status_code == 200:
+                    self._path = path
+                    self._url = url
+                    if scheme != "https":
                         self._add_error(
-                            "invalid_media",
-                            "Media type in Content-Type header must be "
-                            "'text/plain'.",
-                        )
-                    charset = params.get('charset', "utf-8").lower()
-                    if charset != "utf-8" and charset != "csutf8":
-                        # According to RFC9116, charset default is utf-8
+                            "invalid_uri_scheme",
+                            "Insecure URI scheme HTTP is not allowed. "
+                            "The security.txt file access MUST use "
+                            "the \"https\" scheme")
+                    if path != CORRECT_PATH:
                         self._add_error(
-                            "invalid_charset",
-                            "Charset parameter in Content-Type header must be "
-                            "'utf-8' if present.",
-                        )
-                self._content = self._get_str(resp.content)
-                if resp.history:
-                    self._urls = [resp.history[0].url, resp.url]
-                else:
-                    self._urls = [url]
-                super()._process()
+                            "location",
+                            "security.txt was located on the top-level path "
+                            "(legacy place), but must be placed under "
+                            "the '/.well-known/' path.")
+                    if 'content-type' not in resp.headers:
+                        self._add_error(
+                            "no_content_type",
+                            "HTTP Content-Type header must be sent.")
+                    else:
+                        media_type, params = parse_header(
+                            resp.headers["content-type"])
+                        if media_type.lower() != "text/plain":
+                            self._add_error(
+                                "invalid_media",
+                                "Media type in Content-Type header must be "
+                                "'text/plain'.",
+                            )
+                        charset = params.get('charset', "utf-8").lower()
+                        if charset != "utf-8" and charset != "csutf8":
+                            # According to RFC9116, charset default is utf-8
+                            self._add_error(
+                                "invalid_charset",
+                                "Charset parameter in Content-Type header must be "
+                                "'utf-8' if present.",
+                            )
+                    self._content = self._get_str(resp.content)
+                    if resp.history:
+                        self._urls = [resp.history[0].url, resp.url]
+                    else:
+                        self._urls = [url]
+                    super()._process()
+                    security_txt_found = True
+                    break
+            if security_txt_found:
                 break
-        else:
+        if not security_txt_found:
             self._add_error("no_security_txt", "security.txt could not be located.")
