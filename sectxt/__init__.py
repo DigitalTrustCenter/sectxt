@@ -357,8 +357,8 @@ class SecurityTXT(Parser):
                 try:
                     resp = requests.get(url, timeout=5)
                 except requests.exceptions.SSLError:
-                    self._add_error("invalid_cert", "security.txt must be "
-                                                    "served with a valid TLS certificate.")
+                    if not any(d['code'] == 'invalid_cert' for d in self._errors):
+                        self._add_error("invalid_cert", "security.txt must be served with a valid TLS certificate.")
                     try:
                         resp = requests.get(url, timeout=5, verify=False)
                     except:
