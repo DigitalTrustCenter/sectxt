@@ -140,6 +140,12 @@ class SecTxtTestCase(TestCase):
         p = Parser(content)
         self.assertTrue(p.is_valid())
 
+    def test_pgp_signed_formatting(self):
+        content = "\r\n" + _signed_example
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
+        self.assertTrue(any(d['code'] == 'signed_format_issue' for d in p.errors))
+
     def test_unknown_fields(self):
         # Define a security.txt that contains unknown fields (but is valid).
         # The fields Last-updated and Unknown, should be marked as unknown.
