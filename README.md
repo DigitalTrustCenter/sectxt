@@ -72,6 +72,7 @@ a dict with three keys:
 | "empty_value"        | "Field value must not be empty."                                                                                                                                       |
 | "invalid_line"       | "Line must contain a field name and value, unless the line is blank or contains a comment."                                                                            |
 | "no_line_separators" | "Every line must end with either a carriage return and line feed characters or just a line feed character"                                                             |
+| "signed_format_issue"| "Signed security.txt files must start with the begin pgp signed message as the document header"                                                                        |
 
 ### Possible recommendations
 

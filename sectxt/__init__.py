@@ -18,7 +18,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.8"
+__version__ = "0.8.1"
 
 s = requests.Session()
 
@@ -120,7 +120,11 @@ class Parser:
         if self._signed and not self._reading_sig and line.startswith("- "):
             line = line[2:]
 
-        if line == "-----BEGIN PGP SIGNED MESSAGE-----" and self._line_no == 1:
+        if line == "-----BEGIN PGP SIGNED MESSAGE-----":
+            if self._line_no != 1:
+                self._add_error(
+                    "signed_format_issue",
+                    "Signed security.txt files must start with the begin pgp signed message as the document header")
             self._signed = True
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
@@ -357,8 +361,8 @@ class SecurityTXT(Parser):
                 try:
                     resp = requests.get(url, timeout=5)
                 except requests.exceptions.SSLError:
-                    self._add_error("invalid_cert", "security.txt must be "
-                                                    "served with a valid TLS certificate.")
+                    if not any(d['code'] == 'invalid_cert' for d in self._errors):
+                        self._add_error("invalid_cert", "security.txt must be served with a valid TLS certificate.")
                     try:
                         resp = requests.get(url, timeout=5, verify=False)
                     except:
