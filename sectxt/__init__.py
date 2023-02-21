@@ -120,16 +120,16 @@ class Parser:
         if self._signed and not self._reading_sig and line.startswith("- "):
             line = line[2:]
 
-        if line == "-----BEGIN PGP SIGNED MESSAGE-----" and self._line_no == 1:
-            self._signed = True
-            return {"type": "pgp_envelope", "field_name": None, "value": line}
-
         if line == "-----BEGIN PGP SIGNED MESSAGE-----":
             if self._line_no != 1:
                 self._add_error(
                     "signed_format_issue",
                     "Signed security.txt files must start with the begin pgp signed message as the document header")
             self._signed = True
+            return {"type": "pgp_envelope", "field_name": None, "value": line}
+
+        if line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
+            self._reading_sig = True
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line.startswith("#"):
