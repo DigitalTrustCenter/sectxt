@@ -52,7 +52,7 @@ class Parser:
 
     uri_fields = [
         "acknowledgments", "canonical", "contact", "encryption", "hiring",
-        "policy"]
+        "policy", "csaf"]
 
     known_fields = uri_fields + [PREFERRED_LANGUAGES, "expires"]
 
@@ -66,6 +66,7 @@ class Parser:
         self._line_info: List[LineDict] = []
         self._errors: List[ErrorDict] = []
         self._recommendations: List[ErrorDict] = []
+        self._notifications: List[ErrorDict] = []
         self._values: DefaultDict[str, List[str]] = defaultdict(list)
         self._langs: Optional[List[str]] = None
         self._signed = False
@@ -103,6 +104,15 @@ class Parser:
             "code": code, "message": message, "line": self._line_no}
         self._recommendations.append(err_dict)
 
+    def _add_notification(
+            self,
+            code: str,
+            message: str,
+    ) -> None:
+        err_dict: ErrorDict = {
+            "code": code, "message": message, "line": self._line_no}
+        self._notifications.append(err_dict)
+
     def _parse_line(self, line: str) -> LineDict:
         line = line.rstrip()
 
@@ -113,7 +123,7 @@ class Parser:
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line and self._finished_sig:
-            self._add_error("data_after_sig", "Data exists after signature")
+            self._add_error("data_after_sig", "Signed security.txt must not contain data after the signature.")
             return {"type": "error", "field_name": None, "value": line}
 
         # signed content might be dash escaped
@@ -124,7 +134,7 @@ class Parser:
             if self._line_no != 1:
                 self._add_error(
                     "signed_format_issue",
-                    "Signed security.txt files must start with the begin pgp signed message as the document header")
+                    "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'.")
             self._signed = True
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
@@ -200,12 +210,12 @@ class Parser:
                         "or more language tags as defined in RFC5646, "
                         "separated by commas.")
 
-        if self.recommend_unknown_fields and not key in self.known_fields:
-            self._add_recommendation(
+        if self.recommend_unknown_fields and key not in self.known_fields:
+            self._add_notification(
                 "unknown_field",
                 "security.txt contains an unknown field. "
-                "Either this is a custom field which may not be widely "
-                "supported, or there is a typo in a standardised field name.")
+                "Field \"%s\" is either a custom field which may not be widely "
+                "supported, or there is a typo in a standardised field name." % key)
 
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
@@ -226,7 +236,7 @@ class Parser:
                     "invalid_expiry",
                     "Date and time in 'Expires' field must be formatted "
                     "according to ISO 8601.")
-                # Stop to prevent errors when comparing the current datetime, 
+                # Stop to prevent errors when comparing the current datetime,
                 # which is set with a timezone, and the parsed date, that
                 # could potentially not have a timezone.
                 return
@@ -263,12 +273,31 @@ class Parser:
                             "Every line must end with either a carriage "
                             "return and line feed characters or just a line "
                             "feed character")
+
+        # In the security.txt there MUST be at least one field CSAF which points to the provider-metadata.json"
+        if "csaf" not in self._values:
+            self._add_recommendation(
+                "no_csaf",
+                "'CSAF' field should appear at least once"
+            )
+        else:
+            # In the security.txt there MUST be at least one field CSAF which points to the provider-metadata.json"
+            if not all(v.endswith("provider-metadata.json") for v in self._values['csaf']):
+                self._add_error(
+                    "no_csaf_file",
+                    "All CSAF field in the securtiy.txt must point to a provider-metadata.json file"
+                )
+            if len(self._values['csaf']) > 1:
+                self._add_notification(
+                    "multiple_csaf_fields",
+                    "It is allowed to have more than one csaf field, however this should be removed if possible.")
+
         if "contact" not in self._values:
             self._add_error(
                 "no_contact", "'Contact' field must appear at least once.")
         else:
-            if (any(v.startswith("mailto:") for v in self._values['contact'])
-                    and "encryption" not in self._values):
+            if any(v.startswith("mailto:") for v in self._values['contact']) \
+                    and "encryption" not in self._values:
                 self._add_recommendation(
                     "no_encryption",
                     "'Encryption' field should be present when 'Contact' "
@@ -298,6 +327,10 @@ class Parser:
     @property
     def recommendations(self) -> List[ErrorDict]:
         return self._recommendations
+
+    @property
+    def notifications(self) -> List[ErrorDict]:
+        return self._notifications
 
     @property
     def lines(self) -> List[LineDict]:

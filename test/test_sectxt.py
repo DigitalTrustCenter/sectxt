@@ -26,6 +26,9 @@ Policy: https://example.com/security-policy.html
 # Our security acknowledgments page
 Acknowledgments: https://example.com/hall-of-fame.html
 
+# CSAF link
+CSAF: https://example.com/.well-known/csaf/provider-metadata.json
+
 Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.2
@@ -160,18 +163,51 @@ class SecTxtTestCase(TestCase):
         # By default, recommend that there are unknown fields.
         p = Parser(content)
         self.assertTrue(p.is_valid())
-        self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 2)
+        self.assertEqual(len([1 for r in p._notifications if r["code"] == "unknown_field"]), 2)
 
         # When turned off, there should be no unknown_field recommendations.
         p = Parser(content, recommend_unknown_fields=False)
         self.assertTrue(p.is_valid())
-        self.assertEqual(len([1 for r in p._recommendations if r["code"] == "unknown_field"]), 0)
+        self.assertEqual(len([1 for r in p._notifications if r["code"] == "unknown_field"]), 0)
 
     def test_no_line_separators(self):
         single_line_security_txt = f"Contact: mailto:security@example.com  Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z  # All on a single line"
         p = Parser(single_line_security_txt)
         self.assertFalse(p.is_valid())
         self.assertEqual(len([1 for r in p._errors if r["code"] == "no_line_separators"]), 1)
+
+    def test_csaf_optional(self):
+        content = _signed_example.replace("CSAF: https://example.com/.well-known/csaf/provider-metadata.json", "")
+        p = Parser(content)
+        self.assertTrue(p.is_valid())
+        self.assertEqual(len([1 for r in p._recommendations if r["code"] == "no_csaf"]), 1)
+
+    def test_csaf_https_uri(self):
+        content = _signed_example.replace(
+            "CSAF: https://example.com/.well-known/csaf/provider-metadata.json",
+            "CSAF: http://example.com/.well-known/csaf/provider-metadata.json"
+        )
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
+        self.assertEqual(len([1 for r in p._errors if r["code"] == "no_https"]), 1)
+
+    def test_csaf_provider_file(self):
+        content = _signed_example.replace(
+            "CSAF: https://example.com/.well-known/csaf/provider-metadata.json",
+            "CSAF: https://example.com/.well-known/csaf/other_provider_name.json"
+        )
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
+        self.assertEqual(len([1 for r in p._errors if r["code"] == "no_csaf_file"]), 1)
+
+    def test_multiple_csaf_notification(self):
+        content = _signed_example.replace(
+            "# CSAF link",
+            "# CSAF link\nCSAF: https://example2.com/.well-known/csaf/provider-metadata.json"
+        )
+        p = Parser(content)
+        self.assertTrue(p.is_valid())
+        self.assertEqual(len([1 for r in p._notifications if r["code"] == "multiple_csaf_fields"]), 1)
 
 
 def test_not_correct_path(requests_mock: Mocker):
