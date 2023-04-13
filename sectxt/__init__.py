@@ -35,8 +35,7 @@ class LineDict(TypedDict):
     value: str
 
 
-def strlist_from_arg(
-        arg: Union[str, List[str], None]) -> Union[List[str], None]:
+def strlist_from_arg(arg: Union[str, List[str], None]) -> Union[List[str], None]:
     if isinstance(arg, str):
         return [arg]
     return arg
@@ -48,19 +47,26 @@ PREFERRED_LANGUAGES = "preferred-languages"
 class Parser:
     iso8601_re = re.compile(
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[-+]\d{2}:\d{2})$",
-        re.IGNORECASE | re.ASCII)
+        re.IGNORECASE | re.ASCII,
+    )
 
     uri_fields = [
-        "acknowledgments", "canonical", "contact", "encryption", "hiring",
-        "policy", "csaf"]
+        "acknowledgments",
+        "canonical",
+        "contact",
+        "encryption",
+        "hiring",
+        "policy",
+        "csaf",
+    ]
 
     known_fields = uri_fields + [PREFERRED_LANGUAGES, "expires"]
 
     def __init__(
-            self,
-            content: str,
-            urls: Optional[str] = None,
-            recommend_unknown_fields: bool = True,
+        self,
+        content: str,
+        urls: Optional[str] = None,
+        recommend_unknown_fields: bool = True,
     ):
         self._urls = strlist_from_arg(urls)
         self._line_info: List[LineDict] = []
@@ -87,30 +93,27 @@ class Parser:
         self.validate_contents()
 
     def _add_error(
-            self,
-            code: str,
-            message: str,
+        self,
+        code: str,
+        message: str,
     ) -> None:
-        err_dict: ErrorDict = {
-            "code": code, "message": message, "line": self._line_no}
+        err_dict: ErrorDict = {"code": code, "message": message, "line": self._line_no}
         self._errors.append(err_dict)
 
     def _add_recommendation(
-            self,
-            code: str,
-            message: str,
+        self,
+        code: str,
+        message: str,
     ) -> None:
-        err_dict: ErrorDict = {
-            "code": code, "message": message, "line": self._line_no}
+        err_dict: ErrorDict = {"code": code, "message": message, "line": self._line_no}
         self._recommendations.append(err_dict)
 
     def _add_notification(
-            self,
-            code: str,
-            message: str,
+        self,
+        code: str,
+        message: str,
     ) -> None:
-        err_dict: ErrorDict = {
-            "code": code, "message": message, "line": self._line_no}
+        err_dict: ErrorDict = {"code": code, "message": message, "line": self._line_no}
         self._notifications.append(err_dict)
 
     def _parse_line(self, line: str) -> LineDict:
@@ -123,7 +126,10 @@ class Parser:
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line and self._finished_sig:
-            self._add_error("data_after_sig", "Signed security.txt must not contain data after the signature.")
+            self._add_error(
+                "data_after_sig",
+                "Signed security.txt must not contain data after the signature.",
+            )
             return {"type": "error", "field_name": None, "value": line}
 
         # signed content might be dash escaped
@@ -134,7 +140,9 @@ class Parser:
             if self._line_no != 1:
                 self._add_error(
                     "signed_format_issue",
-                    "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'.")
+                    "Signed security.txt must start with the header "
+                    "'-----BEGIN PGP SIGNED MESSAGE-----'.",
+                )
             self._signed = True
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
@@ -152,7 +160,8 @@ class Parser:
             self._add_error(
                 "invalid_line",
                 "Line must contain a field name and value, "
-                "unless the line is blank or contains a comment.")
+                "unless the line is blank or contains a comment.",
+            )
             return {"type": "error", "value": line, "field_name": None}
 
         return {"type": "empty", "value": "", "field_name": None}
@@ -163,15 +172,15 @@ class Parser:
         if key.rstrip() != key:
             self._add_error(
                 "prec_ws",
-                "There must be no whitespace before the field separator "
-                "(colon).")
+                "There must be no whitespace before the field separator (colon).",
+            )
             key = key.rstrip()
 
         if value:
             if value[0] != " ":
                 self._add_error(
-                    "no_space",
-                    "Field separator (colon) must be followed by a space.")
+                    "no_space", "Field separator (colon) must be followed by a space."
+                )
             value = value.lstrip()
 
         if key == "hash" and self._signed:
@@ -182,20 +191,18 @@ class Parser:
             return {"type": "error", "value": line, "field_name": None}
 
         if not value:
-            self._add_error(
-                "empty_value", "Field value must not be empty.")
+            self._add_error("empty_value", "Field value must not be empty.")
             return {"type": "error", "value": line, "field_name": None}
 
         if key in self.uri_fields:
             url_parts = urlsplit(value)
             if url_parts.scheme == "":
                 self._add_error(
-                    "no_uri", "Field value must be a URI "
-                              "(e.g. beginning with 'mailto:').")
+                    "no_uri",
+                    "Field value must be a URI (e.g. beginning with 'mailto:').",
+                )
             elif url_parts.scheme == "http":
-                self._add_error(
-                    "no_https",
-                    "Web URI must begin with 'https://'.")
+                self._add_error("no_https", "Web URI must begin with 'https://'.")
         elif key == "expires":
             self._parse_expires(value)
         elif key == PREFERRED_LANGUAGES:
@@ -208,14 +215,16 @@ class Parser:
                         "invalid_lang",
                         "Value in 'Preferred-Languages' field must match one "
                         "or more language tags as defined in RFC5646, "
-                        "separated by commas.")
+                        "separated by commas.",
+                    )
 
         if self.recommend_unknown_fields and key not in self.known_fields:
             self._add_notification(
                 "unknown_field",
                 "security.txt contains an unknown field. "
-                "Field \"%s\" is either a custom field which may not be widely "
-                "supported, or there is a typo in a standardised field name." % key)
+                'Field "%s" is either a custom field which may not be widely '
+                "supported, or there is a typo in a standardised field name." % key,
+            )
 
         self._values[key].append(value)
         return {"type": "field", "field_name": key, "value": value}
@@ -227,7 +236,8 @@ class Parser:
             self._add_error(
                 "invalid_expiry",
                 "Date and time in 'Expires' field must be formatted "
-                "according to ISO 8601.")
+                "according to ISO 8601.",
+            )
         else:
             self._expires_date = date_value
             if not self.iso8601_re.match(value):
@@ -235,7 +245,8 @@ class Parser:
                 self._add_error(
                     "invalid_expiry",
                     "Date and time in 'Expires' field must be formatted "
-                    "according to ISO 8601.")
+                    "according to ISO 8601.",
+                )
                 # Stop to prevent errors when comparing the current datetime,
                 # which is set with a timezone, and the parsed date, that
                 # could potentially not have a timezone.
@@ -247,75 +258,84 @@ class Parser:
                 self._add_recommendation(
                     "long_expiry",
                     "Date and time in 'Expires' field should be less than "
-                    "a year into the future.")
+                    "a year into the future.",
+                )
             elif date_value < now:
                 self._add_error(
                     "expired",
-                    "Date and time in 'Expires' field must not be in "
-                    "the past.")
+                    "Date and time in 'Expires' field must not be in the past.",
+                )
 
     def validate_contents(self) -> None:
         if "expires" not in self._values:
             self._add_error("no_expire", "'Expires' field must be present.")
         elif len(self._values["expires"]) > 1:
             self._add_error(
-                "multi_expire",
-                "'Expires' field must not appear more than once.")
+                "multi_expire", "'Expires' field must not appear more than once."
+            )
         if self._urls and "canonical" in self._values:
             if all(url not in self._values["canonical"] for url in self._urls):
                 self._add_error(
                     "no_canonical_match",
                     "Web URI where security.txt is located must match with a "
                     "'Canonical' field. In case of redirecting either the "
-                    "first or last web URI of the redirect chain must match.")
-        if self.lines[-1]["type"] != 'empty':
-            self._add_error("no_line_separators",
-                            "Every line must end with either a carriage "
-                            "return and line feed characters or just a line "
-                            "feed character")
+                    "first or last web URI of the redirect chain must match.",
+                )
+        if self.lines[-1]["type"] != "empty":
+            self._add_error(
+                "no_line_separators",
+                "Every line must end with either a carriage "
+                "return and line feed characters or just a line "
+                "feed character",
+            )
 
-        # In the security.txt there MUST be at least one field CSAF which points to the provider-metadata.json"
         if "csaf" not in self._values:
             self._add_recommendation(
-                "no_csaf",
-                "'CSAF' field should appear at least once"
+                "no_csaf", "'CSAF' field should appear at least once"
             )
         else:
-            # In the security.txt there MUST be at least one field CSAF which points to the provider-metadata.json"
-            if not all(v.endswith("provider-metadata.json") for v in self._values['csaf']):
+            if not all(
+                v.endswith("provider-metadata.json") for v in self._values["csaf"]
+            ):
                 self._add_error(
                     "no_csaf_file",
-                    "All CSAF field in the securtiy.txt must point to a provider-metadata.json file"
+                    "All CSAF field in the security.txt must point "
+                    "to a provider-metadata.json file",
                 )
-            if len(self._values['csaf']) > 1:
+            if len(self._values["csaf"]) > 1:
                 self._add_notification(
                     "multiple_csaf_fields",
-                    "It is allowed to have more than one csaf field, however this should be removed if possible.")
+                    "It is allowed to have more than one csaf field, "
+                    "however this should be removed if possible.",
+                )
 
         if "contact" not in self._values:
-            self._add_error(
-                "no_contact", "'Contact' field must appear at least once.")
+            self._add_error("no_contact", "'Contact' field must appear at least once.")
         else:
-            if any(v.startswith("mailto:") for v in self._values['contact']) \
-                    and "encryption" not in self._values:
+            if (
+                any(v.startswith("mailto:") for v in self._values["contact"])
+                and "encryption" not in self._values
+            ):
                 self._add_recommendation(
                     "no_encryption",
                     "'Encryption' field should be present when 'Contact' "
-                    "field contains an email address.")
+                    "field contains an email address.",
+                )
         if PREFERRED_LANGUAGES in self._values:
             if len(self._values[PREFERRED_LANGUAGES]) > 1:
                 self._add_error(
                     "multi_lang",
-                    "'Preferred-Languages' field must not appear more "
-                    "than once.")
+                    "'Preferred-Languages' field must not appear more than once.",
+                )
 
         if not self._signed:
             self._add_recommendation(
-                "not_signed", "security.txt should be digitally signed.")
+                "not_signed", "security.txt should be digitally signed."
+            )
         if self._signed and not self._values.get("canonical"):
             self._add_recommendation(
-                "no_canonical",
-                "'Canonical' field should be present in a signed file.")
+                "no_canonical", "'Canonical' field should be present in a signed file."
+            )
 
     def is_valid(self) -> bool:
         return not self._errors
@@ -339,9 +359,7 @@ class Parser:
     @property
     def preferred_languages(self) -> Union[List[str], None]:
         if PREFERRED_LANGUAGES in self._values:
-            return [
-                v.strip() for v in
-                self._values[PREFERRED_LANGUAGES][0].split(",")]
+            return [v.strip() for v in self._values[PREFERRED_LANGUAGES][0].split(",")]
         return None
 
     @property
@@ -365,7 +383,6 @@ CORRECT_PATH = ".well-known/security.txt"
 
 
 class SecurityTXT(Parser):
-
     def __init__(self, url: str, recommend_unknown_fields: bool = True):
         url_parts = urlsplit(url)
         if url_parts.scheme:
@@ -377,7 +394,7 @@ class SecurityTXT(Parser):
         self._netloc = netloc
         self._path: Optional[str] = None
         self._url: Optional[str] = None
-        super().__init__('', recommend_unknown_fields=recommend_unknown_fields)
+        super().__init__("", recommend_unknown_fields=recommend_unknown_fields)
 
     def _get_str(self, content: bytes) -> str:
         try:
@@ -394,8 +411,11 @@ class SecurityTXT(Parser):
                 try:
                     resp = requests.get(url, timeout=5)
                 except requests.exceptions.SSLError:
-                    if not any(d['code'] == 'invalid_cert' for d in self._errors):
-                        self._add_error("invalid_cert", "security.txt must be served with a valid TLS certificate.")
+                    if not any(d["code"] == "invalid_cert" for d in self._errors):
+                        self._add_error(
+                            "invalid_cert",
+                            "security.txt must be served with a valid TLS certificate.",
+                        )
                     try:
                         resp = requests.get(url, timeout=5, verify=False)
                     except:
@@ -410,27 +430,28 @@ class SecurityTXT(Parser):
                             "invalid_uri_scheme",
                             "Insecure URI scheme HTTP is not allowed. "
                             "The security.txt file access MUST use "
-                            "the \"https\" scheme")
+                            'the "https" scheme',
+                        )
                     if path != CORRECT_PATH:
                         self._add_error(
                             "location",
                             "security.txt was located on the top-level path "
                             "(legacy place), but must be placed under "
-                            "the '/.well-known/' path.")
-                    if 'content-type' not in resp.headers:
+                            "the '/.well-known/' path.",
+                        )
+                    if "content-type" not in resp.headers:
                         self._add_error(
-                            "no_content_type",
-                            "HTTP Content-Type header must be sent.")
+                            "no_content_type", "HTTP Content-Type header must be sent."
+                        )
                     else:
-                        media_type, params = parse_header(
-                            resp.headers["content-type"])
+                        media_type, params = parse_header(resp.headers["content-type"])
                         if media_type.lower() != "text/plain":
                             self._add_error(
                                 "invalid_media",
                                 "Media type in Content-Type header must be "
                                 "'text/plain'.",
                             )
-                        charset = params.get('charset', "utf-8").lower()
+                        charset = params.get("charset", "utf-8").lower()
                         if charset != "utf-8" and charset != "csutf8":
                             # According to RFC9116, charset default is utf-8
                             self._add_error(
