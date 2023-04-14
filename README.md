@@ -89,10 +89,10 @@ a dict with three keys:
 
 ### Possible notifications
 
-| code                          | message                                                                                                                                                     |
-|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| "unknown_field"<sup>[2]</sup> | "security.txt contains an unknown field. Either this is a custom field which may not be widely supported, or there is a typo in a standardised field name." |
-| "multiple_csaf_fields"        | "It is allowed to have more than one CSAF field, however this should be removed if possible."                                                               |
+| code                          | message                                                                                                                                                                     |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| "unknown_field"<sup>[2]</sup> | "Security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
+| "multiple_csaf_fields"        | "It is allowed to have more than one CSAF field, however this should be removed if possible."                                                                               |
 
 ---
 
