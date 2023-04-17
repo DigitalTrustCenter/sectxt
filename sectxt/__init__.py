@@ -18,7 +18,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 
 s = requests.Session()
 
@@ -289,21 +289,16 @@ class Parser:
                 "feed character",
             )
 
-        if "csaf" not in self._values:
-            self._add_recommendation(
-                "no_csaf", "'CSAF' field should appear at least once"
-            )
-        else:
+        if "csaf" in self._values:
             if not all(
                 v.endswith("provider-metadata.json") for v in self._values["csaf"]
             ):
                 self._add_error(
                     "no_csaf_file",
-                    "All CSAF field in the security.txt must point "
-                    "to a provider-metadata.json file",
+                    "All CSAF fields must point to a provider-metadata.json file.",
                 )
             if len(self._values["csaf"]) > 1:
-                self._add_notification(
+                self._add_recommendation(
                     "multiple_csaf_fields",
                     "It is allowed to have more than one csaf field, "
                     "however this should be removed if possible.",

@@ -183,16 +183,6 @@ class SecTxtTestCase(TestCase):
             len([1 for r in p._errors if r["code"] == "no_line_separators"]), 1
         )
 
-    def test_csaf_optional(self):
-        content = _signed_example.replace(
-            "CSAF: https://example.com/.well-known/csaf/provider-metadata.json", ""
-        )
-        p = Parser(content)
-        self.assertTrue(p.is_valid())
-        self.assertEqual(
-            len([1 for r in p._recommendations if r["code"] == "no_csaf"]), 1
-        )
-
     def test_csaf_https_uri(self):
         content = _signed_example.replace(
             "CSAF: https://example.com/.well-known/csaf/provider-metadata.json",
@@ -220,7 +210,7 @@ class SecTxtTestCase(TestCase):
         p = Parser(content)
         self.assertTrue(p.is_valid())
         self.assertEqual(
-            len([1 for r in p._notifications if r["code"] == "multiple_csaf_fields"]), 1
+            len([1 for r in p._recommendations if r["code"] == "multiple_csaf_fields"]), 1
         )
 
 

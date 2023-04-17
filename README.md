@@ -74,25 +74,25 @@ a dict with three keys:
 | "no_line_separators"  | "Every line must end with either a carriage return and line feed characters or just a line feed character"                                                             |
 | "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                |
 | "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
-| "no_csaf_file"        | "All CSAF field in the security.txt must point to a provider-metadata.json file"                                                                                       |
+| "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
 
 
 ### Possible recommendations
 
-| code                       | message                                                                                |
-|----------------------------|----------------------------------------------------------------------------------------|
-| "long_expiry"              | "Date and time in 'Expires' field should be less than a year into the future."         |
-| "no_encryption"            | "'Encryption' field should be present when 'Contact' field contains an email address." |
-| "not_signed"<sup>[1]</sup> | "security.txt should be digitally signed."                                             |
-| "no_canonical"             | "'Canonical' field should be present in a signed file."                                |
-| "no_csaf"                  | "'CSAF' field should appear at least once"                                             |
+| code                       | message                                                                                        |
+|----------------------------|------------------------------------------------------------------------------------------------|
+| "long_expiry"              | "Date and time in 'Expires' field should be less than a year into the future."                 |
+| "no_encryption"            | "'Encryption' field should be present when 'Contact' field contains an email address."         |
+| "not_signed"<sup>[1]</sup> | "security.txt should be digitally signed."                                                     |
+| "no_canonical"             | "'Canonical' field should be present in a signed file."                                        |
+| "multiple_csaf_fields"     | "It is allowed to have more than one CSAF field, however this should be removed if possible."  |
 
 ### Possible notifications
 
 | code                          | message                                                                                                                                                                     |
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "unknown_field"<sup>[2]</sup> | "Security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
-| "multiple_csaf_fields"        | "It is allowed to have more than one CSAF field, however this should be removed if possible."                                                                               |
+
 
 ---
 
