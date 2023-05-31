@@ -1,4 +1,4 @@
-# SecTXT: Security.txt parser and validator
+# SecTXT: security.txt parser and validator
 
 This package contains a security.txt ([RFC 9116](https://www.rfc-editor.org/info/rfc9116)) parser and validator.
 
@@ -91,7 +91,7 @@ a dict with three keys:
 
 | code                          | message                                                                                                                                                                     |
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| "unknown_field"<sup>[2]</sup> | "Security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
+| "unknown_field"<sup>[2]</sup> | "security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
 
 
 ---
