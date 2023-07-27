@@ -221,7 +221,7 @@ class Parser:
         if self.recommend_unknown_fields and key not in self.known_fields:
             self._add_notification(
                 "unknown_field",
-                "Security.txt contains an unknown field. "
+                "security.txt contains an unknown field. "
                 'Field "%s" is either a custom field which may not be widely '
                 "supported, or there is a typo in a standardised field name." % key,
             )
