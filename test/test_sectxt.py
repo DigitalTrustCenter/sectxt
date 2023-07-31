@@ -33,7 +33,11 @@ Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.2
 
-[signature]
+wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4
+HHXU8bf222naeYJHgaHadLTJJ8YQIQ9N5fYF7K4BM0jPZc48aaUPaBdhNxw+
+KDtQJWPzVREIbbGLRQ5WNYrLR6/7v1LHTI8RvgY22QZD9EAkFQwgdG8paIP4
+2APWewNf8e01t1oh4n5bDBtr4IaQoj0=
+=DHXw
 -----END PGP SIGNATURE-----
 """
 
@@ -126,6 +130,23 @@ class SecTxtTestCase(TestCase):
     def test_signed(self):
         p = Parser(_signed_example)
         self.assertTrue(p.is_valid())
+
+    def test_signed_invalid_pgp(self):
+        content = _signed_example.replace(
+            "wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4", ""
+        )
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
+        content = _signed_example.replace(
+            "-----BEGIN PGP SIGNATURE-----", ""
+        )
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
+        content = _signed_example.replace(
+            "-----BEGIN PGP SIGNATURE-----", "-----BEGIN PGP SIGNATURE-----\n- \n"
+        )
+        p = Parser(content)
+        self.assertFalse(p.is_valid())
 
     def test_signed_no_canonical(self):
         content = _signed_example.replace(

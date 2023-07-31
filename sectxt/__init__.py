@@ -9,6 +9,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
 from urllib.parse import urlsplit, urlunsplit
+import pgpy
+from pgpy.errors import PGPError
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
@@ -144,6 +146,21 @@ class Parser:
                     "'-----BEGIN PGP SIGNED MESSAGE-----'.",
                 )
             self._signed = True
+
+            # Check pgp formatting if signed
+            try:
+                pgpy.PGPMessage.from_blob(self._content)
+            except ValueError:
+                self._add_error(
+                    "pgp_data_error",
+                    "signed message did not contain a correct ASCII-armored PGP block"
+                )
+            except PGPError as e:
+                self._add_error(
+                    "pgp_error",
+                    f"pgp error: {e}"
+                )
+
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
@@ -199,7 +216,7 @@ class Parser:
             if url_parts.scheme == "":
                 self._add_error(
                     "no_uri",
-                    "Field value must be a URI (e.g. beginning with 'mailto:').",
+                    "Field value must be a URI.",
                 )
             elif url_parts.scheme == "http":
                 self._add_error("no_https", "Web URI must begin with 'https://'.")
