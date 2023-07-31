@@ -195,13 +195,27 @@ class SecTxtTestCase(TestCase):
     def test_no_line_separators(self):
         expire_date = (date.today() + timedelta(days=10)).isoformat()
         single_line_security_txt = (
-            f"Contact: mailto:security@example.com  Expires: "
+            "Contact: mailto:security@example.com  Expires: "
             f"{expire_date}T18:37:07z  # All on a single line"
         )
-        p = Parser(single_line_security_txt)
-        self.assertFalse(p.is_valid())
+        p_line_separator = Parser(single_line_security_txt)
+        self.assertFalse(p_line_separator.is_valid())
         self.assertEqual(
-            len([1 for r in p._errors if r["code"] == "no_line_separators"]), 1
+            len([1 for r in p_line_separator._errors if r["code"] == "no_line_separators"]), 1
+        )
+        line_length_4_no_carriage_feed = (
+            "line 1\n"
+            "line 2\n"
+            "line 3\n"
+            "Contact: mailto:security@example.com  Expires"
+        )
+        p_length_4 = Parser(line_length_4_no_carriage_feed)
+        self.assertFalse(p_length_4.is_valid())
+        self.assertEqual(
+            len([1 for r in p_length_4._errors if r["code"] == "no_line_separators"]), 1
+        )
+        self.assertEqual(
+            [r["line"] for r in p_length_4._errors if r["code"] == "no_line_separators"], [4]
         )
 
     def test_csaf_https_uri(self):

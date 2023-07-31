@@ -98,7 +98,10 @@ class Parser:
         self,
         code: str,
         message: str,
+        explicit_line_no=None
     ) -> None:
+        if explicit_line_no:
+            self._line_no = explicit_line_no
         err_dict: ErrorDict = {"code": code, "message": message, "line": self._line_no}
         self._errors.append(err_dict)
 
@@ -301,9 +304,10 @@ class Parser:
         if self.lines[-1]["type"] != "empty":
             self._add_error(
                 "no_line_separators",
-                "Every line must end with either a carriage "
-                "return and line feed characters or just a line "
-                "feed character",
+                "Every line, including the last one, must end with "
+                "either a carriage return and line feed characters "
+                "or just a line feed character",
+                len(self.lines)
             )
 
         if "csaf" in self._values:
