@@ -1,6 +1,8 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
+import codecs
+
 import langcodes
 import re
 import sys
@@ -414,10 +416,12 @@ class SecurityTXT(Parser):
 
     def _get_str(self, content: bytes) -> str:
         try:
-            return content.decode()
+            if content.startswith(codecs.BOM_UTF8):
+                content = content.replace(codecs.BOM_UTF8, b'')
+            return content.decode('utf-8')
         except UnicodeError:
             self._add_error("utf8", "Content must be utf-8 encoded.")
-        return content.decode(errors="replace")
+        return content.decode('utf-8', errors="replace")
 
     def _process(self) -> None:
         security_txt_found = False

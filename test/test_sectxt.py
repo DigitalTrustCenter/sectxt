@@ -274,3 +274,16 @@ def test_invalid_uri_scheme(requests_mock: Mocker):
         s = SecurityTXT("example.com")
         if not any(d["code"] == "invalid_uri_scheme" for d in s.errors):
             pytest.fail("invalid_uri_scheme error code should be given")
+
+
+def test_byte_order_mark(requests_mock: Mocker):
+    with Mocker() as m:
+        byte_content_with_bom = b'\xef\xbb\xbf\xef\xbb\xbfContact: mailto:me@example.com\n' \
+                                b'Expires: 2023-08-11T18:37:07z\n'
+        m.get(
+            "https://example.com/.well-known/security.txt",
+            headers={"content-type": "text/plain"},
+            content=byte_content_with_bom,
+        )
+        s = SecurityTXT("example.com")
+        assert(s.is_valid())
