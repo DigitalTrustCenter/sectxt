@@ -71,7 +71,7 @@ a dict with three keys:
 | "empty_key"           | "Field name must not be empty."                                                                                                                                        |
 | "empty_value"         | "Field value must not be empty."                                                                                                                                       |
 | "invalid_line"        | "Line must contain a field name and value, unless the line is blank or contains a comment."                                                                            |
-| "no_line_separators"  | "Every line must end with either a carriage return and line feed characters or just a line feed character"                                                             |
+| "no_line_separators"  | "Every line, including the last one, must end with either a carriage return and line feed characters or just a line feed character"                                    |
 | "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                |
 | "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
 | "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
