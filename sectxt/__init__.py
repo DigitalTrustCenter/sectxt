@@ -158,12 +158,12 @@ class Parser:
             except ValueError:
                 self._add_error(
                     "pgp_data_error",
-                    "signed message did not contain a correct ASCII-armored PGP block"
+                    "Signed message did not contain a correct ASCII-armored PGP block."
                 )
             except PGPError as e:
                 self._add_error(
                     "pgp_error",
-                    f"pgp error: {e}"
+                    f"There was an error with the pgp message: {e}"
                 )
 
             return {"type": "pgp_envelope", "field_name": None, "value": line}

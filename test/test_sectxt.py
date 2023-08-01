@@ -132,21 +132,35 @@ class SecTxtTestCase(TestCase):
         self.assertTrue(p.is_valid())
 
     def test_signed_invalid_pgp(self):
-        content = _signed_example.replace(
-            "wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4", ""
-        )
-        p = Parser(content)
-        self.assertFalse(p.is_valid())
+        # Remove required pgp signature header for pgp data error
         content = _signed_example.replace(
             "-----BEGIN PGP SIGNATURE-----", ""
         )
-        p = Parser(content)
-        self.assertFalse(p.is_valid())
+        p1 = Parser(content)
+        self.assertFalse(p1.is_valid())
+        self.assertEqual(
+            len([1 for r in p1._errors if r["code"] == "pgp_data_error"]), 1
+        )
+        # Add dash escaping within the pgp signature for pgp data error
         content = _signed_example.replace(
             "-----BEGIN PGP SIGNATURE-----", "-----BEGIN PGP SIGNATURE-----\n- \n"
         )
-        p = Parser(content)
-        self.assertFalse(p.is_valid())
+        p2 = Parser(content)
+        self.assertFalse(p2.is_valid())
+        self.assertEqual(
+            len([1 for r in p2._errors if r["code"] == "pgp_data_error"]), 1
+        )
+        # create an error in the pgp message by invalidating the base64 encoding of the signature
+        content = _signed_example.replace(
+            "wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4", "wpwEAQEIABAFAmTH"
+        ).replace(
+            "HHXU8bf222naeYJHgaHadLTJJ8YQIQ9N5fYF7K4BM0jPZc48aaUPaBdhNxw+", "HHXU8bf222naeYJHga"
+        )
+        p3 = Parser(content)
+        self.assertFalse(p3.is_valid())
+        self.assertEqual(
+            len([1 for r in p3._errors if r["code"] == "pgp_error"]), 1
+        )
 
     def test_signed_no_canonical(self):
         content = _signed_example.replace(

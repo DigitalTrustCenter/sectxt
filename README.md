@@ -64,7 +64,7 @@ a dict with three keys:
 | "no_canonical_match"  | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match." |
 | "multi_lang"          | "'Preferred-Languages' field must not appear more than once."                                                                                                          |
 | "invalid_lang"        | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas."                                                |
-| "no_uri"              | "Field value must be a URI (e.g. beginning with 'mailto:')."                                                                                                           |
+| "no_uri"              | "Field value must be a URI."                                                                                                                                           |
 | "no_https"            | "Web URI must begin with 'https://'."                                                                                                                                  |
 | "prec_ws"             | "There must be no whitespace before the field separator (colon)."                                                                                                      |
 | "no_space"            | "Field separator (colon) must be followed by a space."                                                                                                                 | 
@@ -75,6 +75,8 @@ a dict with three keys:
 | "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                |
 | "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
 | "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
+| "pgp_data_error"      | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                    |
+| "pgp_error"           | "There was an error with the pgp message: {error}"                                                                                                                     |
 
 
 ### Possible recommendations
