@@ -443,7 +443,14 @@ class SecurityTXT(Parser):
                             "security.txt must be served with a valid TLS certificate.",
                         )
                     try:
-                        resp = requests.get(url, timeout=5, verify=False)
+                        resp = requests.get(
+                            url,
+                            headers={
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
+                                              'Gecko/20100101 Firefox/12.0'},
+                            timeout=5,
+                            verify=False
+                        )
                     except:
                         continue
                 except:
