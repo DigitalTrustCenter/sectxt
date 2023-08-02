@@ -163,7 +163,7 @@ class Parser:
             except PGPError as e:
                 self._add_error(
                     "pgp_error",
-                    f"There was an error with the pgp message: {e}"
+                    "Decoding or parsing of the pgp message failed."
                 )
 
             return {"type": "pgp_envelope", "field_name": None, "value": line}

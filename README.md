@@ -76,7 +76,7 @@ a dict with three keys:
 | "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
 | "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
 | "pgp_data_error"      | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                    |
-| "pgp_error"           | "There was an error with the pgp message: {error}"                                                                                                                     |
+| "pgp_error"           | "Decoding or parsing of the pgp message failed."                                                                                                                       |
 
 
 ### Possible recommendations
@@ -95,6 +95,11 @@ a dict with three keys:
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "unknown_field"<sup>[2]</sup> | "security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
 
+
+### Security.txt scraping information
+
+The scraper attempts to find the security.txt of the given domain in the correct location `/.well-known/security.txt`. It also looks in the old location and with unsecure `http` scheme which would result in validation errors. To prevent possible errors getting the file from the domain a user-agent is added to the header of the request. The user agent that is added is `Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0`, which would mock a browser in firefox with a Windows 7 OS.
+If a security.txt file is found that file is than parsed. Any errors, recommendations or notifications that are found would be returned.
 
 ---
 
