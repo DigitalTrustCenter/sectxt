@@ -30,7 +30,7 @@ True
 >>> from sectxt import SecurityTXT
 >>> s = SecurityTXT("www.example.com")
 >>> s.errors
-[{'code': 'no_uri', 'message': 'The field value must be an URI', 'line': 2}, {'code': 'no_expire', 'message': 'The Expires field is missing', 'line': None}]
+[{'code': 'no_uri', 'message': 'Field policy value must be an URI', 'line': 2}, {'code': 'no_expire', 'message': 'The Expires field is missing', 'line': None}]
 >>> s.recommendations
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
@@ -64,7 +64,7 @@ a dict with three keys:
 | "no_canonical_match"  | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match." |
 | "multi_lang"          | "'Preferred-Languages' field must not appear more than once."                                                                                                          |
 | "invalid_lang"        | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas."                                                |
-| "no_uri"              | "Field value must be a URI."                                                                                                                                           |
+| "no_uri"              | "Field '{field}' value must be a URI."                                                                                                                                 |
 | "no_https"            | "Web URI must begin with 'https://'."                                                                                                                                  |
 | "prec_ws"             | "There must be no whitespace before the field separator (colon)."                                                                                                      |
 | "no_space"            | "Field separator (colon) must be followed by a space."                                                                                                                 | 

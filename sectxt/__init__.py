@@ -221,7 +221,7 @@ class Parser:
             if url_parts.scheme == "":
                 self._add_error(
                     "no_uri",
-                    "Field value must be a URI.",
+                    f"Field '{key}' value must be a URI.",
                 )
             elif url_parts.scheme == "http":
                 self._add_error("no_https", "Web URI must begin with 'https://'.")
@@ -429,7 +429,13 @@ class SecurityTXT(Parser):
             for path in [".well-known/security.txt", "security.txt"]:
                 url = urlunsplit((scheme, self._netloc, path, None, None))
                 try:
-                    resp = requests.get(url, timeout=5)
+                    resp = requests.get(
+                        url,
+                        headers={
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
+                                          'Gecko/20100101 Firefox/12.0'},
+                        timeout=5
+                    )
                 except requests.exceptions.SSLError:
                     if not any(d["code"] == "invalid_cert" for d in self._errors):
                         self._add_error(
