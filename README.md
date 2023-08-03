@@ -30,7 +30,7 @@ True
 >>> from sectxt import SecurityTXT
 >>> s = SecurityTXT("www.example.com")
 >>> s.errors
-[{'code': 'no_uri', 'message': 'The field value must be an URI', 'line': 2}, {'code': 'no_expire', 'message': 'The Expires field is missing', 'line': None}]
+[{'code': 'no_uri', 'message': 'Field policy value must be an URI', 'line': 2}, {'code': 'no_expire', 'message': 'The Expires field is missing', 'line': None}]
 >>> s.recommendations
 [{'code': 'long_expiry', 'message': 'Expiry date is more than one year in the future', 'line': 3}]
 ```
@@ -64,17 +64,19 @@ a dict with three keys:
 | "no_canonical_match"  | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match." |
 | "multi_lang"          | "'Preferred-Languages' field must not appear more than once."                                                                                                          |
 | "invalid_lang"        | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas."                                                |
-| "no_uri"              | "Field value must be a URI (e.g. beginning with 'mailto:')."                                                                                                           |
+| "no_uri"              | "Field '{field}' value must be a URI."                                                                                                                                 |
 | "no_https"            | "Web URI must begin with 'https://'."                                                                                                                                  |
 | "prec_ws"             | "There must be no whitespace before the field separator (colon)."                                                                                                      |
 | "no_space"            | "Field separator (colon) must be followed by a space."                                                                                                                 | 
 | "empty_key"           | "Field name must not be empty."                                                                                                                                        |
 | "empty_value"         | "Field value must not be empty."                                                                                                                                       |
 | "invalid_line"        | "Line must contain a field name and value, unless the line is blank or contains a comment."                                                                            |
-| "no_line_separators"  | "Every line must end with either a carriage return and line feed characters or just a line feed character"                                                             |
+| "no_line_separators"  | "Every line, including the last one, must end with either a carriage return and line feed characters or just a line feed character"                                    |
 | "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                |
 | "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
 | "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
+| "pgp_data_error"      | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                    |
+| "pgp_error"           | "Decoding or parsing of the pgp message failed."                                                                                                                       |
 
 
 ### Possible recommendations
@@ -93,6 +95,11 @@ a dict with three keys:
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "unknown_field"<sup>[2]</sup> | "security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
 
+
+### Security.txt scraping information
+
+The scraper attempts to find the security.txt of the given domain in the correct location `/.well-known/security.txt`. It also looks in the old location and with unsecure `http` scheme which would result in validation errors. To prevent possible errors getting the file from the domain a user-agent is added to the header of the request. The user agent that is added is `Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0`, which would mock a browser in firefox with a Windows 7 OS.
+If a security.txt file is found that file is than parsed. Any errors, recommendations or notifications that are found would be returned.
 
 ---
 

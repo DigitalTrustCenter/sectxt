@@ -33,7 +33,11 @@ Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.2
 
-[signature]
+wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4
+HHXU8bf222naeYJHgaHadLTJJ8YQIQ9N5fYF7K4BM0jPZc48aaUPaBdhNxw+
+KDtQJWPzVREIbbGLRQ5WNYrLR6/7v1LHTI8RvgY22QZD9EAkFQwgdG8paIP4
+2APWewNf8e01t1oh4n5bDBtr4IaQoj0=
+=DHXw
 -----END PGP SIGNATURE-----
 """
 
@@ -127,6 +131,37 @@ class SecTxtTestCase(TestCase):
         p = Parser(_signed_example)
         self.assertTrue(p.is_valid())
 
+    def test_signed_invalid_pgp(self):
+        # Remove required pgp signature header for pgp data error
+        content = _signed_example.replace(
+            "-----BEGIN PGP SIGNATURE-----", ""
+        )
+        p1 = Parser(content)
+        self.assertFalse(p1.is_valid())
+        self.assertEqual(
+            len([1 for r in p1._errors if r["code"] == "pgp_data_error"]), 1
+        )
+        # Add dash escaping within the pgp signature for pgp data error
+        content = _signed_example.replace(
+            "-----BEGIN PGP SIGNATURE-----", "-----BEGIN PGP SIGNATURE-----\n- \n"
+        )
+        p2 = Parser(content)
+        self.assertFalse(p2.is_valid())
+        self.assertEqual(
+            len([1 for r in p2._errors if r["code"] == "pgp_data_error"]), 1
+        )
+        # create an error in the pgp message by invalidating the base64 encoding of the signature
+        content = _signed_example.replace(
+            "wpwEAQEIABAFAmTHcawJEDs4gPMoG10dAACN5wP/UozhFqHcUWRNhg4KwfY4", "wpwEAQEIABAFAmTH"
+        ).replace(
+            "HHXU8bf222naeYJHgaHadLTJJ8YQIQ9N5fYF7K4BM0jPZc48aaUPaBdhNxw+", "HHXU8bf222naeYJHga"
+        )
+        p3 = Parser(content)
+        self.assertFalse(p3.is_valid())
+        self.assertEqual(
+            len([1 for r in p3._errors if r["code"] == "pgp_error"]), 1
+        )
+
     def test_signed_no_canonical(self):
         content = _signed_example.replace(
             "Canonical: https://example.com/.well-known/security.txt", ""
@@ -174,13 +209,27 @@ class SecTxtTestCase(TestCase):
     def test_no_line_separators(self):
         expire_date = (date.today() + timedelta(days=10)).isoformat()
         single_line_security_txt = (
-            f"Contact: mailto:security@example.com  Expires: "
+            "Contact: mailto:security@example.com  Expires: "
             f"{expire_date}T18:37:07z  # All on a single line"
         )
-        p = Parser(single_line_security_txt)
-        self.assertFalse(p.is_valid())
+        p_line_separator = Parser(single_line_security_txt)
+        self.assertFalse(p_line_separator.is_valid())
         self.assertEqual(
-            len([1 for r in p._errors if r["code"] == "no_line_separators"]), 1
+            len([1 for r in p_line_separator._errors if r["code"] == "no_line_separators"]), 1
+        )
+        line_length_4_no_carriage_feed = (
+            "line 1\n"
+            "line 2\n"
+            "line 3\n"
+            "Contact: mailto:security@example.com  Expires"
+        )
+        p_length_4 = Parser(line_length_4_no_carriage_feed)
+        self.assertFalse(p_length_4.is_valid())
+        self.assertEqual(
+            len([1 for r in p_length_4._errors if r["code"] == "no_line_separators"]), 1
+        )
+        self.assertEqual(
+            [r["line"] for r in p_length_4._errors if r["code"] == "no_line_separators"], [4]
         )
 
     def test_csaf_https_uri(self):
@@ -239,3 +288,16 @@ def test_invalid_uri_scheme(requests_mock: Mocker):
         s = SecurityTXT("example.com")
         if not any(d["code"] == "invalid_uri_scheme" for d in s.errors):
             pytest.fail("invalid_uri_scheme error code should be given")
+
+
+def test_byte_order_mark(requests_mock: Mocker):
+    with Mocker() as m:
+        byte_content_with_bom = b'\xef\xbb\xbf\xef\xbb\xbfContact: mailto:me@example.com\n' \
+                                b'Expires: 2023-08-11T18:37:07z\n'
+        m.get(
+            "https://example.com/.well-known/security.txt",
+            headers={"content-type": "text/plain"},
+            content=byte_content_with_bom,
+        )
+        s = SecurityTXT("example.com")
+        assert(s.is_valid())

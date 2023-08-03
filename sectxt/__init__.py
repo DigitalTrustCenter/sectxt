@@ -1,6 +1,8 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 #
+import codecs
+
 import langcodes
 import re
 import sys
@@ -9,6 +11,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
 from urllib.parse import urlsplit, urlunsplit
+import pgpy
+from pgpy.errors import PGPError
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
@@ -18,7 +22,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.8.3"
+__version__ = "0.9.0"
 
 s = requests.Session()
 
@@ -96,7 +100,10 @@ class Parser:
         self,
         code: str,
         message: str,
+        explicit_line_no=None
     ) -> None:
+        if explicit_line_no:
+            self._line_no = explicit_line_no
         err_dict: ErrorDict = {"code": code, "message": message, "line": self._line_no}
         self._errors.append(err_dict)
 
@@ -144,6 +151,21 @@ class Parser:
                     "'-----BEGIN PGP SIGNED MESSAGE-----'.",
                 )
             self._signed = True
+
+            # Check pgp formatting if signed
+            try:
+                pgpy.PGPMessage.from_blob(self._content)
+            except ValueError:
+                self._add_error(
+                    "pgp_data_error",
+                    "Signed message did not contain a correct ASCII-armored PGP block."
+                )
+            except PGPError as e:
+                self._add_error(
+                    "pgp_error",
+                    "Decoding or parsing of the pgp message failed."
+                )
+
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
         if line == "-----BEGIN PGP SIGNATURE-----" and self._signed:
@@ -199,7 +221,7 @@ class Parser:
             if url_parts.scheme == "":
                 self._add_error(
                     "no_uri",
-                    "Field value must be a URI (e.g. beginning with 'mailto:').",
+                    f"Field '{key}' value must be a URI.",
                 )
             elif url_parts.scheme == "http":
                 self._add_error("no_https", "Web URI must begin with 'https://'.")
@@ -284,9 +306,10 @@ class Parser:
         if self.lines[-1]["type"] != "empty":
             self._add_error(
                 "no_line_separators",
-                "Every line must end with either a carriage "
-                "return and line feed characters or just a line "
-                "feed character",
+                "Every line, including the last one, must end with "
+                "either a carriage return and line feed characters "
+                "or just a line feed character",
+                len(self.lines)
             )
 
         if "csaf" in self._values:
@@ -393,10 +416,12 @@ class SecurityTXT(Parser):
 
     def _get_str(self, content: bytes) -> str:
         try:
-            return content.decode()
+            if content.startswith(codecs.BOM_UTF8):
+                content = content.replace(codecs.BOM_UTF8, b'')
+            return content.decode('utf-8')
         except UnicodeError:
             self._add_error("utf8", "Content must be utf-8 encoded.")
-        return content.decode(errors="replace")
+        return content.decode('utf-8', errors="replace")
 
     def _process(self) -> None:
         security_txt_found = False
@@ -404,7 +429,13 @@ class SecurityTXT(Parser):
             for path in [".well-known/security.txt", "security.txt"]:
                 url = urlunsplit((scheme, self._netloc, path, None, None))
                 try:
-                    resp = requests.get(url, timeout=5)
+                    resp = requests.get(
+                        url,
+                        headers={
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
+                                          'Gecko/20100101 Firefox/12.0'},
+                        timeout=5
+                    )
                 except requests.exceptions.SSLError:
                     if not any(d["code"] == "invalid_cert" for d in self._errors):
                         self._add_error(
@@ -412,7 +443,14 @@ class SecurityTXT(Parser):
                             "security.txt must be served with a valid TLS certificate.",
                         )
                     try:
-                        resp = requests.get(url, timeout=5, verify=False)
+                        resp = requests.get(
+                            url,
+                            headers={
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
+                                              'Gecko/20100101 Firefox/12.0'},
+                            timeout=5,
+                            verify=False
+                        )
                     except:
                         continue
                 except:
