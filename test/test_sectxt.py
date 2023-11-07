@@ -292,12 +292,15 @@ def test_invalid_uri_scheme(requests_mock: Mocker):
 
 def test_byte_order_mark(requests_mock: Mocker):
     with Mocker() as m:
+        expires = f"Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z\n"
         byte_content_with_bom = b'\xef\xbb\xbf\xef\xbb\xbfContact: mailto:me@example.com\n' \
-                                b'Expires: 2023-08-11T18:37:07z\n'
+                                + bytes(expires, "utf-8")
         m.get(
             "https://example.com/.well-known/security.txt",
             headers={"content-type": "text/plain"},
             content=byte_content_with_bom,
         )
         s = SecurityTXT("example.com")
-        assert(s.is_valid())
+        assert(not s.is_valid())
+        if not any(d["code"] == "bom_in_file" for d in s.errors):
+            pytest.fail("bom_in_file error code should be given")
