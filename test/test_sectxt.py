@@ -301,4 +301,6 @@ def test_byte_order_mark(requests_mock: Mocker):
             content=byte_content_with_bom,
         )
         s = SecurityTXT("example.com")
-        assert(s.is_valid())
+        assert(not s.is_valid())
+        if not any(d["code"] == "bom_in_file" for d in s.errors):
+            pytest.fail("bom_in_file error code should be given")
