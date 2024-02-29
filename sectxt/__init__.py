@@ -6,7 +6,7 @@ import re
 import sys
 from cgi import parse_header
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Union, List, DefaultDict
 from urllib.parse import urlsplit, urlunsplit
 
@@ -252,15 +252,14 @@ class Parser:
                 # could potentially not have a timezone.
                 return
 
-            now = datetime.now(timezone.utc)
-            max_value = now.replace(year=now.year + 1)
-            if date_value > max_value:
+            expiry_in = date_value - datetime.now(timezone.utc)
+            if expiry_in > timedelta(days=365):
                 self._add_recommendation(
                     "long_expiry",
                     "Date and time in 'Expires' field should be less than "
                     "a year into the future.",
                 )
-            elif date_value < now:
+            elif expiry_in < timedelta(days=0):
                 self._add_error(
                     "expired",
                     "Date and time in 'Expires' field must not be in the past.",
