@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
 from urllib.parse import urlsplit, urlunsplit
 import pgpy
+from dateutil.relativedelta import relativedelta
 from pgpy.errors import PGPError
 
 if sys.version_info < (3, 8):
@@ -22,7 +23,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 
 s = requests.Session()
 
@@ -277,7 +278,7 @@ class Parser:
                 return
 
             now = datetime.now(timezone.utc)
-            max_value = now.replace(year=now.year + 1)
+            max_value = now + relativedelta(years=1)
             if date_value > max_value:
                 self._add_recommendation(
                     "long_expiry",
