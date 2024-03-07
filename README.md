@@ -15,7 +15,6 @@ The package is available on pypi. It can be installed using pip:
 ## Usage
 
 ```python
-
 >>> from sectxt import SecurityTXT
 >>> s = SecurityTXT("www.example.com")
 >>> s.is_valid()
@@ -26,7 +25,6 @@ True
 ## Validation
 
 ```python
-
 >>> from sectxt import SecurityTXT
 >>> s = SecurityTXT("www.example.com")
 >>> s.errors
@@ -102,13 +100,22 @@ a dict with three keys:
 The scraper attempts to find the security.txt of the given domain in the correct location `/.well-known/security.txt`. It also looks in the old location and with unsecure `http` scheme which would result in validation errors. To prevent possible errors getting the file from the domain a user-agent is added to the header of the request. The user agent that is added is `Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0`, which would mock a browser in firefox with a Windows 7 OS.
 If a security.txt file is found that file is than parsed. Any errors, recommendations or notifications that are found would be returned.
 
+### Test security.txt files locally
+
+It is possible to give a local path as the url parameter. For this behaviour you have to turn on the `is_local` parameter.
+Doing this will only validate the contents of the file given.
+
+```python
+>>> from sectxt import SecurityTXT
+>>> s = SecurityTXT("/home/example/security.txt", is_local=True)
+```
+
 ---
 
 [1] The security.txt parser will check for the addition of the digital signature, but it will not verify the validity of the signature.
 
-[2] Regarding code "unknown_field": According to RFC 9116 section 2.4, any fields that are not explicitly supported must be ignored. This parser does add a notification for unknown fields by default. This behaviour can be turned off using the parameter recommend_unknown_fields:
+[2] Regarding code "unknown_field": According to RFC 9116 section 2.4, any fields that are not explicitly supported must be ignored. This parser does add a notification for unknown fields by default. This behaviour can be turned off using the parameter `recommend_unknown_fields`:
 ```python
-
 >>> from sectxt import SecurityTXT
 >>> s = SecurityTXT("www.example.com", recommend_unknown_fields=False)
 ```

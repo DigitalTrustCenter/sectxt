@@ -72,6 +72,7 @@ class Parser:
         content: str,
         urls: Optional[str] = None,
         recommend_unknown_fields: bool = True,
+        is_local: bool = False
     ):
         self._urls = strlist_from_arg(urls)
         self._line_info: List[LineDict] = []
@@ -85,6 +86,7 @@ class Parser:
         self._finished_sig = False
         self._content = content
         self.recommend_unknown_fields = recommend_unknown_fields
+        self.is_local = is_local
         self._line_no: Optional[int] = None
         self._process()
 
@@ -404,18 +406,18 @@ CORRECT_PATH = ".well-known/security.txt"
 
 
 class SecurityTXT(Parser):
-    def __init__(self, url: str, recommend_unknown_fields: bool = True):
+    def __init__(self, url: str, recommend_unknown_fields: bool = True, is_local: bool = False):
         url_parts = urlsplit(url)
-        if url_parts.scheme:
+        if url_parts.scheme and not is_local:
             if not url_parts.netloc:
                 raise ValueError("Invalid URL")
-            netloc = url_parts.netloc
+            loc = url_parts.netloc
         else:
-            netloc = url
-        self._netloc = netloc
+            loc = url
+        self._loc = loc
         self._path: Optional[str] = None
         self._url: Optional[str] = None
-        super().__init__("", recommend_unknown_fields=recommend_unknown_fields)
+        super().__init__("", recommend_unknown_fields=recommend_unknown_fields, is_local=is_local)
 
     def _get_str(self, content: bytes) -> str:
         try:
@@ -433,83 +435,89 @@ class SecurityTXT(Parser):
         return content.decode('utf-8', errors="replace")
 
     def _process(self) -> None:
-        security_txt_found = False
-        for scheme in ["https", "http"]:
-            for path in [".well-known/security.txt", "security.txt"]:
-                url = urlunsplit((scheme, self._netloc, path, None, None))
-                try:
-                    resp = requests.get(
-                        url,
-                        headers={
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
-                                          'Gecko/20100101 Firefox/12.0'},
-                        timeout=5
-                    )
-                except requests.exceptions.SSLError:
-                    if not any(d["code"] == "invalid_cert" for d in self._errors):
-                        self._add_error(
-                            "invalid_cert",
-                            "security.txt must be served with a valid TLS certificate.",
-                        )
+        if self.is_local:
+            security_txt_file = open(self._loc, mode="rb")
+            self._content = self._get_str(security_txt_file.read())
+            security_txt_file.close()
+            super()._process()
+        else:
+            security_txt_found = False
+            for scheme in ["https", "http"]:
+                for path in [".well-known/security.txt", "security.txt"]:
+                    url = urlunsplit((scheme, self._loc, path, None, None))
                     try:
                         resp = requests.get(
                             url,
                             headers={
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
                                               'Gecko/20100101 Firefox/12.0'},
-                            timeout=5,
-                            verify=False
+                            timeout=5
                         )
+                    except requests.exceptions.SSLError:
+                        if not any(d["code"] == "invalid_cert" for d in self._errors):
+                            self._add_error(
+                                "invalid_cert",
+                                "security.txt must be served with a valid TLS certificate.",
+                            )
+                        try:
+                            resp = requests.get(
+                                url,
+                                headers={
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) '
+                                                  'Gecko/20100101 Firefox/12.0'},
+                                timeout=5,
+                                verify=False
+                            )
+                        except:
+                            continue
                     except:
                         continue
-                except:
-                    continue
-                if resp.status_code == 200:
-                    self._path = path
-                    self._url = url
-                    if scheme != "https":
-                        self._add_error(
-                            "invalid_uri_scheme",
-                            "Insecure URI scheme HTTP is not allowed. "
-                            "The security.txt file access MUST use "
-                            'the "https" scheme',
-                        )
-                    if path != CORRECT_PATH:
-                        self._add_error(
-                            "location",
-                            "security.txt was located on the top-level path "
-                            "(legacy place), but must be placed under "
-                            "the '/.well-known/' path.",
-                        )
-                    if "content-type" not in resp.headers:
-                        self._add_error(
-                            "no_content_type", "HTTP Content-Type header must be sent."
-                        )
-                    else:
-                        media_type, params = parse_header(resp.headers["content-type"])
-                        if media_type.lower() != "text/plain":
+                    if resp.status_code == 200:
+                        self._path = path
+                        self._url = url
+                        if scheme != "https":
                             self._add_error(
-                                "invalid_media",
-                                "Media type in Content-Type header must be "
-                                "'text/plain'.",
+                                "invalid_uri_scheme",
+                                "Insecure URI scheme HTTP is not allowed. "
+                                "The security.txt file access MUST use "
+                                'the "https" scheme',
                             )
-                        charset = params.get("charset", "utf-8").lower()
-                        if charset != "utf-8" and charset != "csutf8":
-                            # According to RFC9116, charset default is utf-8
+                        if path != CORRECT_PATH:
                             self._add_error(
-                                "invalid_charset",
-                                "Charset parameter in Content-Type header must be "
-                                "'utf-8' if present.",
+                                "location",
+                                "security.txt was located on the top-level path "
+                                "(legacy place), but must be placed under "
+                                "the '/.well-known/' path.",
                             )
-                    self._content = self._get_str(resp.content)
-                    if resp.history:
-                        self._urls = [resp.history[0].url, resp.url]
-                    else:
-                        self._urls = [url]
-                    super()._process()
-                    security_txt_found = True
+                        if "content-type" not in resp.headers:
+                            self._add_error(
+                                "no_content_type", "HTTP Content-Type header must be sent."
+                            )
+                        else:
+                            media_type, params = parse_header(resp.headers["content-type"])
+                            if media_type.lower() != "text/plain":
+                                self._add_error(
+                                    "invalid_media",
+                                    "Media type in Content-Type header must be "
+                                    "'text/plain'.",
+                                )
+                            charset = params.get("charset", "utf-8").lower()
+                            if charset != "utf-8" and charset != "csutf8":
+                                # According to RFC9116, charset default is utf-8
+                                self._add_error(
+                                    "invalid_charset",
+                                    "Charset parameter in Content-Type header must be "
+                                    "'utf-8' if present.",
+                                )
+                        self._content = self._get_str(resp.content)
+                        if resp.history:
+                            self._urls = [resp.history[0].url, resp.url]
+                        else:
+                            self._urls = [url]
+                        super()._process()
+                        security_txt_found = True
+                        break
+                if security_txt_found:
                     break
-            if security_txt_found:
-                break
-        if not security_txt_found:
-            self._add_error("no_security_txt", "security.txt could not be located.")
+            if not security_txt_found:
+                self._add_error("no_security_txt", "security.txt could not be located.")

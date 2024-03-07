@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from unittest import TestCase
 from sectxt import Parser, SecurityTXT
 from requests_mock.mocker import Mocker
+import os
 
 _signed_example = f"""-----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
@@ -318,3 +319,19 @@ class SecTxtTestCase(TestCase):
             assert(not s.is_valid())
             if not any(d["code"] == "bom_in_file" for d in s.errors):
                 pytest.fail("bom_in_file error code should be given")
+
+    # noinspection PyMethodMayBeStatic
+    def test_local_file(self):
+        # Create a text file to be used for the local test
+        test_file_name = "test_security.txt"
+        f = open(test_file_name, "w")
+        f.write(_signed_example)
+        f.close()
+        cwd = os.getcwd()
+        test_file_path = os.path.join(cwd, test_file_name)
+        s = SecurityTXT(test_file_path, is_local=True)
+        assert (s.is_valid())
+
+        # Remove the file after the test is done.
+        if os.path.exists(test_file_path):
+            os.remove(test_file_path)
