@@ -46,38 +46,38 @@ a dict with three keys:
 
 ### Possible errors
 
-| code                  | message                                                                                                                                                                |
-|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| "no_security_txt"     | "security.txt could not be located."                                                                                                                                   |
-| "location"            | "security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."                                                    |
-| "invalid_uri_scheme"  | "Insecure URI scheme HTTP is not allowed. The security.txt file access must use the HTTPS scheme"                                                                      |
-| "invalid_cert"        | "security.txt must be served with a valid TLS certificate."                                                                                                            |
-| "no_content_type"     | "HTTP Content-Type header must be sent."                                                                                                                               |
-| "invalid_media"       | "Media type in Content-Type header must be 'text/plain'."                                                                                                              |
-| "invalid_charset"     | "Charset parameter in Content-Type header must be 'utf-8' if present."                                                                                                 |
-| "utf8"                | "Content must be utf-8 encoded."                                                                                                                                       |
-| "no_expire"           | "'Expires' field must be present."                                                                                                                                     |
-| "multi_expire"        | "'Expires' field must not appear more than once."                                                                                                                      |
-| "invalid_expiry"      | "Date and time in 'Expires' field must be formatted according to ISO 8601."                                                                                            | 
-| "expired"             | "Date and time in 'Expires' field must not be in the past."                                                                                                            |
-| "no_contact"          | "'Contact' field must appear at least once."                                                                                                                           |
-| "no_canonical_match"  | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match." |
-| "multi_lang"          | "'Preferred-Languages' field must not appear more than once."                                                                                                          |
-| "invalid_lang"        | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas."                                                |
-| "no_uri"              | "Field '{field}' value must be a URI."                                                                                                                                 |
-| "no_https"            | "Web URI must begin with 'https://'."                                                                                                                                  |
-| "prec_ws"             | "There must be no whitespace before the field separator (colon)."                                                                                                      |
-| "no_space"            | "Field separator (colon) must be followed by a space."                                                                                                                 | 
-| "empty_key"           | "Field name must not be empty."                                                                                                                                        |
-| "empty_value"         | "Field value must not be empty."                                                                                                                                       |
-| "invalid_line"        | "Line must contain a field name and value, unless the line is blank or contains a comment."                                                                            |
-| "no_line_separators"  | "Every line, including the last one, must end with either a carriage return and line feed characters or just a line feed character"                                    |
-| "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                |
-| "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                       |
-| "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                         |
-| "pgp_data_error"      | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                    |
-| "pgp_error"           | "Decoding or parsing of the pgp message failed."                                                                                                                       |
-| "bom_in_file"         | "The Byte-Order Mark was found in the UTF-8 File. Security.txt must be encoded using UTF-8 in Net-Unicode form, the BOM signature must not appear at the beginning."   |
+| code                  | message                                                                                                                                                                     |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| "no_security_txt"     | "security.txt could not be located."                                                                                                                                        |
+| "location"            | "security.txt was located on the top-level path (legacy place), but must be placed under the '/.well-known/' path."                                                         |
+| "invalid_uri_scheme"  | "Insecure URI scheme HTTP is not allowed. The security.txt file access must use the HTTPS scheme"                                                                           |
+| "invalid_cert"        | "security.txt must be served with a valid TLS certificate."                                                                                                                 |
+| "no_content_type"     | "HTTP Content-Type header must be sent."                                                                                                                                    |
+| "invalid_media"       | "Media type in Content-Type header must be 'text/plain'."                                                                                                                   |
+| "invalid_charset"     | "Charset parameter in Content-Type header must be 'utf-8' if present."                                                                                                      |
+| "utf8"                | "Content must be utf-8 encoded."                                                                                                                                            |
+| "no_expire"           | "'Expires' field must be present."                                                                                                                                          |
+| "multi_expire"        | "'Expires' field must not appear more than once."                                                                                                                           |
+| "invalid_expiry"      | "Date and time in 'Expires' field must be formatted according to ISO 8601."                                                                                                 | 
+| "expired"             | "Date and time in 'Expires' field must not be in the past."                                                                                                                 |
+| "no_contact"          | "'Contact' field must appear at least once."                                                                                                                                |
+| "no_canonical_match"  | "Web URI where security.txt is located must match with a 'Canonical' field. In case of redirecting either the first or last web URI of the redirect chain must match."      |
+| "multi_lang"          | "'Preferred-Languages' field must not appear more than once."                                                                                                               |
+| "invalid_lang"        | "Value in 'Preferred-Languages' field must match one or more language tags as defined in RFC5646, separated by commas."                                                     |
+| "no_uri"              | "Field '{field}' value must be a URI."                                                                                                                                      |
+| "no_https"            | "Web URI must begin with 'https://'."                                                                                                                                       |
+| "prec_ws"             | "There must be no whitespace before the field separator (colon)."                                                                                                           |
+| "no_space"            | "Field separator (colon) must be followed by a space."                                                                                                                      | 
+| "empty_key"           | "Field name must not be empty."                                                                                                                                             |
+| "empty_value"         | "Field value must not be empty."                                                                                                                                            |
+| "invalid_line"        | "Line must contain a field name and value, unless the line is blank or contains a comment."                                                                                 |
+| "no_line_separators"  | "Every line, including the last one, must end with either a carriage return and line feed characters or just a line feed character"                                         |
+| "signed_format_issue" | "Signed security.txt must start with the header '-----BEGIN PGP SIGNED MESSAGE-----'. "                                                                                     |
+| "data_after_sig"      | "Signed security.txt must not contain data after the signature."                                                                                                            |
+| "no_csaf_file"        | "All CSAF fields must point to a provider-metadata.json file."                                                                                                              |
+| "pgp_data_error"      | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                         |
+| "pgp_error"           | "Decoding or parsing of the pgp message failed."                                                                                                                            |
+| "bom_in_file"         | "The Byte-Order Mark was found at the start of the file. Security.txt must be encoded using UTF-8 in Net-Unicode form, the BOM signature must not appear at the beginning." |
 
 
 ### Possible recommendations

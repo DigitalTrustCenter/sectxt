@@ -262,45 +262,59 @@ class SecTxtTestCase(TestCase):
             len([1 for r in p._recommendations if r["code"] == "multiple_csaf_fields"]), 1
         )
 
+    # noinspection PyMethodMayBeStatic
+    def test_valid_security_txt(self):
+        with Mocker() as m:
+            expires = f"Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z\n"
+            byte_content = b'Contact: mailto:me@example.com\n' + bytes(expires, "utf-8")
+            m.get(
+                "https://example.com/.well-known/security.txt",
+                headers={"content-type": "text/plain"},
+                content=byte_content
+            )
+            m.get("https://example.com/security.txt", text=_signed_example)
+            s = SecurityTXT("example.com")
+            assert (s.is_valid())
 
-def test_not_correct_path(requests_mock: Mocker):
-    with Mocker() as m:
-        m.get(
-            "https://example.com/.well-known/security.txt",
-            exc=requests.exceptions.ConnectTimeout,
-        )
-        m.get("https://example.com/security.txt", text=_signed_example)
-        s = SecurityTXT("example.com")
-        if not any(d["code"] == "location" for d in s.errors):
-            pytest.fail("location error code should be given")
+    # noinspection PyMethodMayBeStatic
+    def test_not_correct_path(self):
+        with Mocker() as m:
+            m.get(
+                "https://example.com/.well-known/security.txt",
+                exc=requests.exceptions.ConnectTimeout,
+            )
+            m.get("https://example.com/security.txt", text=_signed_example)
+            s = SecurityTXT("example.com")
+            if not any(d["code"] == "location" for d in s.errors):
+                pytest.fail("location error code should be given")
 
+    # noinspection PyMethodMayBeStatic
+    def test_invalid_uri_scheme(self):
+        with Mocker() as m:
+            m.get(
+                "https://example.com/.well-known/security.txt",
+                exc=requests.exceptions.ConnectTimeout,
+            )
+            m.get(
+                "https://example.com/security.txt", exc=requests.exceptions.ConnectTimeout
+            )
+            m.get("http://example.com/.well-known/security.txt", text=_signed_example)
+            s = SecurityTXT("example.com")
+            if not any(d["code"] == "invalid_uri_scheme" for d in s.errors):
+                pytest.fail("invalid_uri_scheme error code should be given")
 
-def test_invalid_uri_scheme(requests_mock: Mocker):
-    with Mocker() as m:
-        m.get(
-            "https://example.com/.well-known/security.txt",
-            exc=requests.exceptions.ConnectTimeout,
-        )
-        m.get(
-            "https://example.com/security.txt", exc=requests.exceptions.ConnectTimeout
-        )
-        m.get("http://example.com/.well-known/security.txt", text=_signed_example)
-        s = SecurityTXT("example.com")
-        if not any(d["code"] == "invalid_uri_scheme" for d in s.errors):
-            pytest.fail("invalid_uri_scheme error code should be given")
-
-
-def test_byte_order_mark(requests_mock: Mocker):
-    with Mocker() as m:
-        expires = f"Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z\n"
-        byte_content_with_bom = b'\xef\xbb\xbf\xef\xbb\xbfContact: mailto:me@example.com\n' \
-                                + bytes(expires, "utf-8")
-        m.get(
-            "https://example.com/.well-known/security.txt",
-            headers={"content-type": "text/plain"},
-            content=byte_content_with_bom,
-        )
-        s = SecurityTXT("example.com")
-        assert(not s.is_valid())
-        if not any(d["code"] == "bom_in_file" for d in s.errors):
-            pytest.fail("bom_in_file error code should be given")
+    # noinspection PyMethodMayBeStatic
+    def test_byte_order_mark(self):
+        with Mocker() as m:
+            expires = f"Expires: {(date.today() + timedelta(days=10)).isoformat()}T18:37:07z\n"
+            byte_content_with_bom = b'\xef\xbb\xbf\xef\xbb\xbfContact: mailto:me@example.com\n' \
+                                    + bytes(expires, "utf-8")
+            m.get(
+                "https://example.com/.well-known/security.txt",
+                headers={"content-type": "text/plain"},
+                content=byte_content_with_bom,
+            )
+            s = SecurityTXT("example.com")
+            assert(not s.is_valid())
+            if not any(d["code"] == "bom_in_file" for d in s.errors):
+                pytest.fail("bom_in_file error code should be given")

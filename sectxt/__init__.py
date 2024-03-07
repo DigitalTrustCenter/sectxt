@@ -421,12 +421,12 @@ class SecurityTXT(Parser):
         try:
             if content.startswith(codecs.BOM_UTF8):
                 content = content.replace(codecs.BOM_UTF8, b'')
-            self._add_error(
-                "bom_in_file",
-                "The Byte-Order Mark was found in the UTF-8 File. "
-                "Security.txt must be encoded using UTF-8 in Net-Unicode form, "
-                "the BOM signature must not appear at the beginning."
-            )
+                self._add_error(
+                    "bom_in_file",
+                    "The Byte-Order Mark was found at the start of the file. "
+                    "Security.txt must be encoded using UTF-8 in Net-Unicode form, "
+                    "the BOM signature must not appear at the beginning."
+                )
             return content.decode('utf-8')
         except UnicodeError:
             self._add_error("utf8", "Content must be utf-8 encoded.")
