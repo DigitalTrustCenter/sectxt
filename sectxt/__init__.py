@@ -422,7 +422,7 @@ class SecurityTXT(Parser):
     def _get_str(self, content: bytes) -> str:
         try:
             if content.startswith(codecs.BOM_UTF8):
-                content = content.replace(codecs.BOM_UTF8, b'')
+                content = content.replace(codecs.BOM_UTF8, b'', 1)
                 self._add_error(
                     "bom_in_file",
                     "The Byte-Order Mark was found at the start of the file. "
