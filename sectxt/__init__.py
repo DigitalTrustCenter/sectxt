@@ -23,7 +23,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 
 s = requests.Session()
 
@@ -69,7 +69,7 @@ class Parser:
 
     def __init__(
         self,
-        content: str,
+        content: bytes,
         urls: Optional[str] = None,
         recommend_unknown_fields: bool = True,
         is_local: bool = False
@@ -85,13 +85,15 @@ class Parser:
         self._reading_sig = False
         self._finished_sig = False
         self._content = content
+        self._content_str = None
         self.recommend_unknown_fields = recommend_unknown_fields
         self.is_local = is_local
         self._line_no: Optional[int] = None
         self._process()
 
     def _process(self) -> None:
-        lines = self._content.split("\n")
+        self._content_str = self._get_str(self._content)
+        lines = self._content_str.split("\n")
         self._line_no = 1
         for line in lines:
             self._line_info.append(self._parse_line(line))
@@ -159,7 +161,7 @@ class Parser:
 
             # Check pgp formatting if signed
             try:
-                pgpy.PGPMessage.from_blob(self._content)
+                pgpy.PGPMessage.from_blob(self._content_str)
             except ValueError:
                 self._add_error(
                     "pgp_data_error",
@@ -363,6 +365,21 @@ class Parser:
     def is_valid(self) -> bool:
         return not self._errors
 
+    def _get_str(self, content: bytes) -> str:
+        try:
+            if content.startswith(codecs.BOM_UTF8):
+                content = content.replace(codecs.BOM_UTF8, b'', 1)
+                self._add_error(
+                    "bom_in_file",
+                    "The Byte-Order Mark was found at the start of the file. "
+                    "Security.txt must be encoded using UTF-8 in Net-Unicode form, "
+                    "the BOM signature must not appear at the beginning."
+                )
+            return content.decode('utf-8')
+        except UnicodeError:
+            self._add_error("utf8", "Content must be utf-8 encoded.")
+        return content.decode('utf-8', errors="replace")
+
     @property
     def errors(self) -> List[ErrorDict]:
         return self._errors
@@ -417,27 +434,12 @@ class SecurityTXT(Parser):
         self._loc = loc
         self._path: Optional[str] = None
         self._url: Optional[str] = None
-        super().__init__("", recommend_unknown_fields=recommend_unknown_fields, is_local=is_local)
-
-    def _get_str(self, content: bytes) -> str:
-        try:
-            if content.startswith(codecs.BOM_UTF8):
-                content = content.replace(codecs.BOM_UTF8, b'', 1)
-                self._add_error(
-                    "bom_in_file",
-                    "The Byte-Order Mark was found at the start of the file. "
-                    "Security.txt must be encoded using UTF-8 in Net-Unicode form, "
-                    "the BOM signature must not appear at the beginning."
-                )
-            return content.decode('utf-8')
-        except UnicodeError:
-            self._add_error("utf8", "Content must be utf-8 encoded.")
-        return content.decode('utf-8', errors="replace")
+        super().__init__(b'', recommend_unknown_fields=recommend_unknown_fields, is_local=is_local)
 
     def _process(self) -> None:
         if self.is_local:
             security_txt_file = open(self._loc, mode="rb")
-            self._content = self._get_str(security_txt_file.read())
+            self._content = security_txt_file.read()
             security_txt_file.close()
             super()._process()
         else:
@@ -509,7 +511,7 @@ class SecurityTXT(Parser):
                                     "Charset parameter in Content-Type header must be "
                                     "'utf-8' if present.",
                                 )
-                        self._content = self._get_str(resp.content)
+                        self._content = resp.content
                         if resp.history:
                             self._urls = [resp.history[0].url, resp.url]
                         else:
