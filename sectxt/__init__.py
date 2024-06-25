@@ -6,7 +6,7 @@ import codecs
 import langcodes
 import re
 import sys
-from cgi import parse_header
+from email.message import Message
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
@@ -496,8 +496,10 @@ class SecurityTXT(Parser):
                                 "no_content_type", "HTTP Content-Type header must be sent."
                             )
                         else:
-                            media_type, params = parse_header(resp.headers["content-type"])
-                            if media_type.lower() != "text/plain":
+                            m = Message()
+                            m['content-type'] = resp.headers["content-type"]
+                            params = dict(m.get_params())
+                            if "text/plain" not in params:
                                 self._add_error(
                                     "invalid_media",
                                     "Media type in Content-Type header must be "
