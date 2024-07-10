@@ -4,3 +4,4 @@ langcodes==3.3.0
 pytest==8.1.1
 requests-mock==1.12.1
 PGPy @ https://github.com/SecurityInnovation/PGPy/archive/09014c72b4557dd1254cf68a32e50f78515f5f32.zip
+validators==0.32.0
