@@ -438,7 +438,7 @@ class Parser:
         return None
 
     @property
-    def valid_contact_emails(self) -> Union[None, str]:
+    def valid_contact_emails(self) -> Union[None, list[str]]:
         """Return all valid email addresses found in the 'Contact' field."""
         if "contact" in self._values:
             emails = []
@@ -459,7 +459,7 @@ class Parser:
         return None
 
     @property
-    def contact_urls(self) -> Union[None, str]:
+    def contact_urls(self) -> Union[None, list[str]]:
         """Return all URLs found in the 'Contact' field."""
         if "contact" in self._values:
             urls = []
@@ -472,7 +472,7 @@ class Parser:
 
     @property
     def contact_tel(self) -> Union[None, str]:
-        """Return the first valid phone number found in the 'Contact' field."""
+        """Return the first phone number found in the 'Contact' field."""
         if "contact" in self._values:
             for value in self._values["contact"]:
                 if value.startswith("tel:"):
@@ -480,7 +480,7 @@ class Parser:
         return None
 
     @property
-    def contact_tels(self) -> Union[None, str]:
+    def contact_tels(self) -> Union[None, list[str]]:
         """Return all phone numbers found in the 'Contact' field."""
         if "contact" in self._values:
             tels = []
