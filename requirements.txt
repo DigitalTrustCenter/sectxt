@@ -4,3 +4,4 @@ langcodes==3.3.0
 pytest==8.1.1
 requests-mock==1.12.1
 PGPy==0.6.0
+validators==0.32.0

@@ -7,6 +7,7 @@ import langcodes
 import re
 import sys
 from email.message import Message
+import validators
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
@@ -404,12 +405,111 @@ class Parser:
 
     @property
     def contact_email(self) -> Union[None, str]:
+        """Return the first email address found in the 'Contact' field."""
         if "contact" in self._values:
             for value in self._values["contact"]:
-                if value.startswith("mailto:"):
+                if value.startswith("mailto:") and validators.email(value[7:]):
                     return value[7:]
-                if ":" not in value and "@" in value:
+                if validators.email(value):
                     return value
+        return None
+
+    @property
+    def contact_emails(self) -> Union[None, str]:
+        """Return all email addresses found in the 'Contact' field."""
+        if "contact" in self._values:
+            emails = []
+            for value in self._values["contact"]:
+                if value.startswith("mailto:") and validators.email(value[7:]):
+                    emails.append(value[7:])
+                elif validators.email(value):
+                    emails.append(value)
+            if emails:
+                return emails
+        return None
+
+    @property
+    def valid_contact_email(self) -> Union[None, str]:
+        """Return the first valid email address found in the 'Contact' field."""
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if value.startswith("mailto:") and validators.email(value[7:]):
+                    return value[7:]
+        return None
+
+    @property
+    def valid_contact_emails(self) -> Union[None, list[str]]:
+        """Return all valid email addresses found in the 'Contact' field."""
+        if "contact" in self._values:
+            emails = []
+            for value in self._values["contact"]:
+                if value.startswith("mailto:") and validators.email(value[7:]):
+                    emails.append(value[7:])
+            if emails:
+                return emails
+        return None
+
+    @property
+    def contact_url(self) -> Union[None, str]:
+        """Return the first URL found in the 'Contact' field."""
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if validators.url(value):
+                    return value
+        return None
+
+    @property
+    def contact_urls(self) -> Union[None, list[str]]:
+        """Return all URLs found in the 'Contact' field."""
+        if "contact" in self._values:
+            urls = []
+            for value in self._values["contact"]:
+                if validators.url(value):
+                    urls.append(value)
+            if urls:
+                return urls
+        return None
+
+    @property
+    def contact_tel(self) -> Union[None, str]:
+        """Return the first phone number found in the 'Contact' field."""
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if value.startswith("tel:"):
+                    return value[4:]
+        return None
+
+    @property
+    def contact_tels(self) -> Union[None, list[str]]:
+        """Return all phone numbers found in the 'Contact' field."""
+        if "contact" in self._values:
+            tels = []
+            for value in self._values["contact"]:
+                if value.startswith("tel:"):
+                    tels.append(value)
+            if tels:
+                return tels
+        return None
+
+    @property
+    def valid_contact_url(self) -> Union[None, str]:
+        """Return the first valid URL found in the 'Contact' field."""
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if validators.url(value) and value.startswith("https://"):
+                    return value
+        return None
+
+    @property
+    def valid_contact_urls(self) -> Union[None, str]:
+        """Return all valid URLs found in the 'Contact' field."""
+        if "contact" in self._values:
+            urls = []
+            for value in self._values["contact"]:
+                if validators.url(value) and value.startswith("https://"):
+                    urls.append(value)
+            if urls:
+                return urls
         return None
 
     @property

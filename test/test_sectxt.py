@@ -263,6 +263,24 @@ class SecTxtTestCase(TestCase):
             len([1 for r in p._recommendations if r["code"] == "multiple_csaf_fields"]), 1
         )
 
+    def test_contact_field_properties(self):
+        content = _signed_example.replace(
+            "Contact: mailto:security@example.com",
+            "Contact: mailto:security@example.com\n"
+            "Contact: mailto:security%2Buri%2Bencoded@example.com\n"
+            "Contact: mailto:not_a_valid_email\n"
+            "Contact: tel:+1-201-555-0123\n"
+            "Contact: https://example.com/security-contact.html"
+        )
+        p = Parser(content.encode())
+        self.assertTrue(p.is_valid())
+        self.assertEqual("security@example.com", p.contact_email)
+        self.assertTrue("security@example.com" in p.contact_emails)
+        self.assertTrue("security%2Buri%2Bencoded@example.com" in p.contact_emails)
+        self.assertFalse("not_a_valid_email" in p.contact_emails)
+        self.assertEqual("security@example.com", p.contact_email)
+        self.assertEqual("https://example.com/security-contact.html", p.contact_url)
+
     # noinspection PyMethodMayBeStatic
     def test_valid_security_txt(self):
         with Mocker() as m:
