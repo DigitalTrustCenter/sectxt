@@ -471,6 +471,27 @@ class Parser:
         return None
 
     @property
+    def contact_tel(self) -> Union[None, str]:
+        """Return the first valid phone number found in the 'Contact' field."""
+        if "contact" in self._values:
+            for value in self._values["contact"]:
+                if value.startswith("tel:"):
+                    return value[4:]
+        return None
+
+    @property
+    def contact_tels(self) -> Union[None, str]:
+        """Return all phone numbers found in the 'Contact' field."""
+        if "contact" in self._values:
+            tels = []
+            for value in self._values["contact"]:
+                if value.startswith("tel:"):
+                    tels.append(value)
+            if tels:
+                return tels
+        return None
+
+    @property
     def valid_contact_url(self) -> Union[None, str]:
         """Return the first valid URL found in the 'Contact' field."""
         if "contact" in self._values:
