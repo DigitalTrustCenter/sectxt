@@ -361,3 +361,14 @@ class SecTxtTestCase(TestCase):
         # Remove the file after the test is done.
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
+
+    def test_quick(self):
+        print("Test")
+        url = "aua24ag.de"
+        s = SecurityTXT(url)
+        print(s.errors)
+        print(s.recommendations)
+        print(s.notifications)
+        print(s.is_valid())
+
+
