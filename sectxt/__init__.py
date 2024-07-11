@@ -575,6 +575,9 @@ class SecurityTXT(Parser):
                     except:
                         continue
                     if resp.status_code == 200:
+                        if resp.history:
+                            if not resp.url.endswith(path):
+                                continue
                         self._path = path
                         self._url = url
                         if scheme != "https":
