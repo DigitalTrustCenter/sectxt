@@ -24,7 +24,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 
 s = requests.Session()
 
