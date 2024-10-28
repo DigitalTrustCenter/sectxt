@@ -346,6 +346,14 @@ class SecTxtTestCase(TestCase):
             if not any(d["code"] == "bom_in_file" for d in s.errors):
                 pytest.fail("bom_in_file error code should be given")
 
+    def test_too_many_final_newlines_signed(self):
+        content = _signed_example + "\n"
+        p = Parser(content.encode())
+        self.assertFalse(p.is_valid())
+        self.assertEqual(
+            len([1 for r in p._errors if r["code"] == "too_many_line_separators"]), 1
+        )
+
     # noinspection PyMethodMayBeStatic
     def test_local_file(self):
         # Create a text file to be used for the local test

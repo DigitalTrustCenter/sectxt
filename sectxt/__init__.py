@@ -12,9 +12,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional, Union, List, DefaultDict
 from urllib.parse import urlsplit, urlunsplit
-import pgpy
+from pgpy_dtc import PGPMessage
+from pgpy_dtc.errors import PGPError
 from dateutil.relativedelta import relativedelta
-from pgpy.errors import PGPError
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
@@ -24,7 +24,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.9.4"
+__version__ = "0.9.5"
 
 s = requests.Session()
 
@@ -162,7 +162,7 @@ class Parser:
 
             # Check pgp formatting if signed
             try:
-                pgpy.PGPMessage.from_blob(self._content_str)
+                PGPMessage.from_blob(self._content_str)
             except ValueError:
                 self._add_error(
                     "pgp_data_error",
@@ -173,6 +173,9 @@ class Parser:
                     "pgp_error",
                     "Decoding or parsing of the pgp message failed."
                 )
+            except NotImplementedError as e:
+                # ignore this error for now since it does not indicate an issue with the pgp block
+                pass
 
             return {"type": "pgp_envelope", "field_name": None, "value": line}
 
@@ -317,6 +320,12 @@ class Parser:
                 "Every line, including the last one, must end with "
                 "either a carriage return and line feed characters "
                 "or just a line feed character",
+                len(self.lines)
+            )
+        if self._signed and self.lines[-1]["type"] == "empty" and self.lines[-2]["type"] == "empty":
+            self._add_error(
+                "too_many_line_separators",
+                "A PGP signed message cannot end with more than one newline",
                 len(self.lines)
             )
 
