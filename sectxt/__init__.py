@@ -424,7 +424,7 @@ class Parser:
         return None
 
     @property
-    def contact_emails(self) -> Union[None, str]:
+    def contact_emails(self) -> Union[None, list[str]]:
         """Return all email addresses found in the 'Contact' field."""
         if "contact" in self._values:
             emails = []
@@ -510,7 +510,7 @@ class Parser:
         return None
 
     @property
-    def valid_contact_urls(self) -> Union[None, str]:
+    def valid_contact_urls(self) -> Union[None, list[str]]:
         """Return all valid URLs found in the 'Contact' field."""
         if "contact" in self._values:
             urls = []
