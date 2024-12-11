@@ -263,6 +263,17 @@ class SecTxtTestCase(TestCase):
             len([1 for r in p._recommendations if r["code"] == "multiple_csaf_fields"]), 1
         )
 
+    def test_multiple_signed_messages(self):
+        content = _signed_example.replace(
+            "-----BEGIN PGP SIGNATURE-----",
+            "-----BEGIN PGP SIGNATURE-----\n-----BEGIN PGP SIGNATURE-----",
+        )
+        p = Parser(content.encode())
+        self.assertFalse(p.is_valid())
+        self.assertEqual(
+            len([1 for r in p._errors if r["code"] == "pgp_data_error"]), 1
+        )
+
     def test_contact_field_properties(self):
         content = _signed_example.replace(
             "Contact: mailto:security@example.com",

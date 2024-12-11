@@ -1,7 +1,7 @@
-requests==2.31.0
+requests==2.32.3
 python-dateutil==2.9.0.post0
-langcodes==3.3.0
-pytest==8.1.1
+langcodes==3.5.0
+pytest==8.3.4
 requests-mock==1.12.1
-PGPy-dtc==0.1.0
-validators==0.32.0
+validators==0.34.0
+PGPy-dtc==0.1.1
