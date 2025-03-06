@@ -2,12 +2,22 @@
 
 import argparse
 from typing import List
+from urllib.parse import urlparse
 
 from . import ErrorDict, SecurityTXT, __version__
 
 
 class TaggedErrorDict(ErrorDict):
     tag: str
+
+
+def valid_url(url: str) -> bool:
+    """Basic URL validator that checks for the presence of a scheme and a network location."""
+    try:
+        parsed_url = urlparse(url)
+        return all([parsed_url.scheme, parsed_url.netloc])
+    except AttributeError:
+        return False
 
 
 def tag_messages(
@@ -35,6 +45,7 @@ def human_readable_print(messages_list: List[TaggedErrorDict]) -> None:
 
     if len(messages_list) == 0:
         print("✓ No issues were detected!")
+
 
 def main() -> int:
     """Main function which parses the arguments, calls SecurityTXT()
@@ -66,7 +77,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    address_is_local = not args.address.startswith("http")
+    address_is_local = not valid_url(args.address)
 
     s = SecurityTXT(
         args.address,
