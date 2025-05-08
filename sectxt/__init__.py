@@ -24,7 +24,7 @@ else:
 import dateutil.parser
 import requests
 
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 
 s = requests.Session()
 
@@ -173,6 +173,12 @@ class Parser:
                     "pgp_error",
                     "Decoding or parsing of the pgp message failed."
                 )
+            except IndexError:
+                self._add_error(
+                    "pgp_signature_error",
+                    "Malformed PGP signature."
+                )
+
             except NotImplementedError as e:
                 # ignore this error for now since it does not indicate an issue with the pgp block
                 pass
