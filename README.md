@@ -75,6 +75,7 @@ a dict with three keys:
 | "no_csaf_file"                     | "All CSAF fields must point to a provider-metadata.json file."                                                                                                              |
 | "pgp_data_error"                   | "Signed message did not contain a correct ASCII-armored PGP block."                                                                                                         |
 | "pgp_error"                        | "Decoding or parsing of the pgp message failed."                                                                                                                            |
+| "pgp_signature_error"              | "Parsing the PGP signature failed."                                                                                                                                         |
 | "bom_in_file"                      | "The Byte-Order Mark was found at the start of the file. Security.txt must be encoded using UTF-8 in Net-Unicode form, the BOM signature must not appear at the beginning." |
 | "too_many_line_separators"         | "A PGP signed message cannot end with more than one newline"                                                                                                                |
 
