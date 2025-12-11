@@ -96,6 +96,64 @@ a dict with three keys:
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "unknown_field"<sup>[2]</sup> | "security.txt contains an unknown field. Field {unknown_field} is either a custom field which may not be widely supported, or there is a typo in a standardised field name. |
 
+### Command line interface
+
+To use sectxt from the command line, simply run the command followed by the address of the website or the path to a local file you want to check:
+
+```shell
+sectxt <address>
+```
+
+Replace `<address>` with the URL of the website or the path to the local file.
+
+#### Options
+
+- **--show-notifications**: Show notifications.
+- **--show-recommendations**: Show recommendations.
+- **--no-recommend-unknown-fields**: Do not issue notifications for unknown fields.
+- **--json**: Output the results in JSON format.
+
+#### Examples
+
+- Basic validation
+
+Validate a security.txt file at a given website:
+
+```shell
+sectxt https://example.com
+```
+
+- Validating a local file
+
+Validate a local security.txt file:
+
+```shell
+sectxt /path/to/local/security.txt
+```
+
+- JSON output
+
+Validate a security.txt file and output the results in JSON format. This output will also include message types such as error, notification, and recommendation.
+
+```shell
+sectxt --json https://example.com
+```
+
+- Show notifications and recommendations
+
+Validate a security.txt file, show notifications, and provide recommendations:
+
+```shell
+sectxt --show-notifications --show-recommendations https://example.com
+```
+
+- Suppress recommendations related to unknown fields
+
+Validate a security.txt file, show recommendations but suppress notifications for unknown fields:
+
+```shell
+sectxt --show-recommendations --no-recommend-unknown-fields https://example.com
+```
 
 ### Security.txt scraping information
 
